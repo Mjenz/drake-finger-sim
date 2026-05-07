@@ -17,6 +17,7 @@ set(action_files
 
 set(msg_files
   "msg/MotorFeedback.msg"
+  "msg/MotorActivity.msg"
 )
 
 set(srv_files

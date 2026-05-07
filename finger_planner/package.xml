@@ -15,6 +15,7 @@
   <depend>finger_interfaces</depend>
   <depend>armadillo</depend>
   <depend>fingerlib</depend>
+  <depend>rclcpp</depend>
   <depend>rclcpp_action</depend>
   <depend>modern_robotics</depend>
   

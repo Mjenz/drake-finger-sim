@@ -96,7 +96,7 @@ Visualization Manager:
       Value: true
     - Class: rviz_default_plugins/MarkerArray
       Enabled: true
-      Name: visual
+      Name: visual_actual
       Namespaces:
         plant: true
       Topic:
@@ -104,11 +104,23 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /scene_markers/visual
+        Value: /actual/scene_markers/visual
+      Value: true
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: true
+      Name: visual_setpoint
+      Namespaces:
+        plant: true
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /setpoint/scene_markers/visual
       Value: true
     - Class: rviz_default_plugins/MarkerArray
       Enabled: false
-      Name: collision
+      Name: collision_actual
       Namespaces:
         {}
       Topic:
@@ -116,7 +128,19 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /scene_markers/collision
+        Value: /actual/scene_markers/collision
+      Value: false
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: false
+      Name: collision_setpoint
+      Namespaces:
+        {}
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /setpoint/scene_markers/collision
       Value: false
   Enabled: true
   Global Options:

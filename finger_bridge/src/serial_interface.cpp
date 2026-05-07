@@ -109,8 +109,9 @@ void SerialInterface::parse_response()
   // Parse and validate
   int resp_success;
 
-  if (sscanf(response.c_str(), "%f %f %f %f", &_mcp_splay_motor_pos, &_mcp_flex_motor_pos,
-    &_pip_flex_motor_pos, &_active) == 4)
+  if (sscanf(response.c_str(), "%f %f %f %f %f %f %f", &_mcp_splay_motor_pos, &_mcp_flex_motor_pos,
+    &_pip_flex_motor_pos, &cmd_mcp_splay_motor_pos_, &cmd_mcp_flex_motor_pos_,
+    &cmd_pip_flex_motor_pos_, &_active) == 7)
   {
     _fdbk_status = FeedbackStatus::NEW_FEEDBACK;
 
@@ -140,6 +141,6 @@ std::vector<float> SerialInterface::get_feedback()
 {
   _fdbk_status = FeedbackStatus::NOTHING_NEW;
   return std::vector<float> {_mcp_splay_motor_pos, _mcp_flex_motor_pos, _pip_flex_motor_pos,
-    _active};
+    cmd_mcp_splay_motor_pos_, cmd_mcp_flex_motor_pos_, cmd_pip_flex_motor_pos_, _active};
 
 }

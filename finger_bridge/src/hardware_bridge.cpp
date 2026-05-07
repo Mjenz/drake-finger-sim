@@ -1,11 +1,17 @@
 /// \file
-/// \brief bridges feedback and commands between ros and teensy
+/// \brief Bridges feedback and commands between ROS2 and the Teensy over serial.
+///        Receives trajectory commands and start/stop signals via services, forwards
+///        them to the Teensy, and publishes motor feedback parsed from serial responses.
 ///
-/// PARAMETERS:
-/// PUBLISHES:
-/// SUBSCRIBES:
+/// PUBLISHERS:
+///   + /motor_pos_actual_feedback (finger_interfaces/msg/MotorFeedback) - Actual motor positions read from the Teensy
+///   + /motor_pos_setpoint_feedback (finger_interfaces/msg/MotorFeedback) - Setpoint motor positions read from the Teensy
+///   + /motor_pos_activity_feedback (finger_interfaces/msg/MotorActivity) - Motor activity state read from the Teensy
+///
 /// SERVERS:
-///     send_service (finger_interfaces::srv::SendCommand): Gets command trajectories and saves to be output to drake.
+///   + /send_command (finger_interfaces/srv/SendCommand) - Receives a motor position trajectory and forwards it to the Teensy over serial
+///   + /start_command (finger_interfaces/srv/StartStopCommand) - Triggers trajectory execution on the Teensy
+///   + /stop_command (finger_interfaces/srv/StartStopCommand) - Halts trajectory execution on the Teensy
 
 #include <chrono>
 #include <memory>
@@ -19,6 +25,7 @@
 #include "finger_interfaces/srv/send_command.hpp"
 #include "finger_interfaces/srv/start_stop_command.hpp"
 #include "finger_interfaces/msg/motor_feedback.hpp"
+#include "finger_interfaces/msg/motor_activity.hpp"
 
 #include "std_msgs/msg/float64_multi_array.hpp"
 
@@ -40,8 +47,9 @@ public:
     state_ (State::WAITING)
   {
     // init motor feedback
-    motor_feedback_.motor_positions = {0, 0, 0};
-    motor_feedback_.active = 0.0;
+    motor_actual_feedback_.motor_positions = {0, 0, 0};
+    motor_setpoint_feedback_.motor_positions = {0, 0, 0};
+    motor_activity_feedback_.active = 0.0;
 
     // define send service callback function
     auto send_service_callback =
@@ -83,7 +91,8 @@ public:
             response->success = 0;
           }
 
-          RCLCPP_INFO_STREAM(get_logger(), "send service request completed, response: " << int(response->success));
+          RCLCPP_INFO_STREAM(get_logger(),
+          "send service request completed, response: " << int(response->success));
         }
       };
 
@@ -120,7 +129,8 @@ public:
           response->success = 0;
         }
 
-        RCLCPP_INFO_STREAM(get_logger(), "start service request completed, response: " << int(response->success));
+        RCLCPP_INFO_STREAM(get_logger(),
+        "start service request completed, response: " << int(response->success));
       };
 
     // create callback group for start service
@@ -156,7 +166,8 @@ public:
           response->success = 0;
         }
 
-        RCLCPP_INFO_STREAM(get_logger(), "stop service request completed, response: " << int(response->success));
+        RCLCPP_INFO_STREAM(get_logger(),
+        "stop service request completed, response: " << int(response->success));
       };
 
     // create callback group for stop service
@@ -167,10 +178,12 @@ public:
       stop_service_callback, rclcpp::ServicesQoS(), stop_cb_group_);
 
     // create publishers
-    motor_cmd_pub_ = create_publisher<std_msgs::msg::Float64MultiArray>("/cmd_position", 10);
-    action_feedback_pub_ =
-      create_publisher<finger_interfaces::msg::MotorFeedback>("/motor_pos_action_feedback", 10);
-
+    actual_feedback_pub_ =
+      create_publisher<finger_interfaces::msg::MotorFeedback>("/motor_pos_actual_feedback", 10);
+    setpoint_feedback_pub_ =
+      create_publisher<finger_interfaces::msg::MotorFeedback>("/motor_pos_setpoint_feedback", 10);
+    activity_feedback_pub_ =
+      create_publisher<finger_interfaces::msg::MotorActivity>("/motor_pos_activity_feedback", 10);
     // define feedback timer callback and init
     auto feedback_timer_callback =
       [this]() -> void {
@@ -179,54 +192,30 @@ public:
         if (serial_interface_->get_feedback_status() == FeedbackStatus::NEW_FEEDBACK) {
           auto fb = serial_interface_->get_feedback();
 
-          // publish feedback to action feedback topic
-          motor_feedback_.motor_positions = std::vector<float>(fb.begin(), fb.begin() + 3);
-          motor_feedback_.active = fb.at(3);
-          action_feedback_pub_->publish(motor_feedback_);
+          motor_actual_feedback_.motor_positions = std::vector<float>(fb.begin(), fb.begin() + 3);
+          motor_setpoint_feedback_.motor_positions = std::vector<float>(fb.begin() + 3,
+          fb.begin() + 6);
+          motor_activity_feedback_.active = fb.at(6);
+
+          actual_feedback_pub_->publish(motor_actual_feedback_);
+          setpoint_feedback_pub_->publish(motor_setpoint_feedback_);
+          activity_feedback_pub_->publish(motor_activity_feedback_);
         }
 
       };
     feedback_timer_ = this->create_wall_timer(1ms, feedback_timer_callback);
-
-    // define timer callback and init
-    auto command_sender_timer_callback =
-      [this]() -> void {
-        // init count
-        static auto count = 0;
-
-        if (state_ == State::READY) {
-          RCLCPP_INFO_ONCE(get_logger(), "publishing commands to drake...");
-
-          // publish commands to drake
-          auto msg = std_msgs::msg::Float64MultiArray();
-          msg.data = {commands_.at(count).at(0), commands_.at(count).at(1),
-            commands_.at(count).at(2)};
-          motor_cmd_pub_->publish(msg);
-
-          // increment counter
-          count++;
-
-          // check for overflow
-          if (count >= length_) {
-            count = 0;
-            if (repeat_ == 0) {
-              // disable control if no repeat
-              state_ = State::WAITING;
-            }
-          }
-        }
-      };
-    teensy_sim_timer_ = this->create_wall_timer(10ms, command_sender_timer_callback);
   }
 
 private:
   std::shared_ptr<SerialInterface> serial_interface_;
   State state_;
-  finger_interfaces::msg::MotorFeedback motor_feedback_;
+  finger_interfaces::msg::MotorFeedback motor_actual_feedback_;
+  finger_interfaces::msg::MotorFeedback motor_setpoint_feedback_;
+  finger_interfaces::msg::MotorActivity motor_activity_feedback_;
   rclcpp::TimerBase::SharedPtr feedback_timer_;
-  rclcpp::TimerBase::SharedPtr teensy_sim_timer_;
-  rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr motor_cmd_pub_;
-  rclcpp::Publisher<finger_interfaces::msg::MotorFeedback>::SharedPtr action_feedback_pub_;
+  rclcpp::Publisher<finger_interfaces::msg::MotorFeedback>::SharedPtr actual_feedback_pub_;
+  rclcpp::Publisher<finger_interfaces::msg::MotorFeedback>::SharedPtr setpoint_feedback_pub_;
+  rclcpp::Publisher<finger_interfaces::msg::MotorActivity>::SharedPtr activity_feedback_pub_;
   rclcpp::Service<finger_interfaces::srv::SendCommand>::SharedPtr send_service_;
   rclcpp::Service<finger_interfaces::srv::StartStopCommand>::SharedPtr start_service_;
   rclcpp::Service<finger_interfaces::srv::StartStopCommand>::SharedPtr stop_service_;

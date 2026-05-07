@@ -1,10 +1,13 @@
 /// \file
-/// \brief runs high level control coordinating perception and movement commands
+/// \brief Runs high level control coordinating perception and movement commands.
+///        Waits for the Drake simulation heartbeat, then dispatches cartesian,
+///        sinusoidal, and linear trajectory goals to the finger planner.
 ///
-/// PARAMETERS:
-/// PUBLISHES:
-/// SUBSCRIBES:
-/// SERVERS:
+/// CLIENTS:
+///   + /heartbeat (std_srvs/srv/Empty) - Blocks startup until the Drake simulation is ready
+///   + /cartesian_move (finger_interfaces/action/Cartesian) - Sends end-effector waypoint goals
+///   + /sinusoidal_move (finger_interfaces/action/Sinusoidal) - Sends sinusoidal joint trajectory goals
+///   + /linear_move (finger_interfaces/action/Linear) - Sends linear joint-space trajectory goals
 
 #include <chrono>
 #include <memory>
@@ -80,17 +83,16 @@ public:
     rclcpp::sleep_for(3000ms);
 
     // // send test linear command
-    std::vector<float> start_joint_loc = {0.0, 0.0, 0.0};
-    std::vector<float> end_joint_loc = {0.0, 1.256, 1.256};
-
-    for (auto i = 0; i < 20; i++) {
-      send_linear_goal(start_joint_loc, end_joint_loc);
-      send_linear_goal(end_joint_loc, start_joint_loc);
-    }
+    // std::vector<float> start_joint_loc = {0.0, 0.0, 0.0};
+    // std::vector<float> end_joint_loc = {0.0, 1.256, 0.0};
+    // for (auto i = 0; i < 20; i++) {
+    //   send_linear_goal(start_joint_loc, end_joint_loc);
+    //   send_linear_goal(end_joint_loc, start_joint_loc);
+    // }
 
 
     // send test sinusoidal command
-    // send_sinusoid_goal(1, 2, 0.7, 2.0, 0.7);
+    send_sinusoid_goal(1, 1, 0.471, 10.0, 0.7);
 
     // // // send test cartesi2an command
     // std::vector<float> start = {0, 0.15, -0.05};

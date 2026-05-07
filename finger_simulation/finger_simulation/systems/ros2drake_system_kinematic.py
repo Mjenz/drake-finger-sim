@@ -1,12 +1,12 @@
 """Leafsystem class connecting ROS topic and drake simulation."""
 
+from finger_interfaces.msg import MotorFeedback
+
 import numpy as np
 
 from pydrake.systems.framework import LeafSystem
 
 import rclpy
-
-from std_msgs.msg import Float64MultiArray
 
 
 class Ros2Drake(LeafSystem):
@@ -34,8 +34,8 @@ class Ros2Drake(LeafSystem):
         # Set subscriber
         self._latest_position = np.zeros(self.nu)
         self._sub = self._node.create_subscription(
-            Float64MultiArray,
-            '/cmd_position',
+            MotorFeedback,
+            '/motor_pos_actual_feedback',
             self._ros_position_callback,
             10,
         )
@@ -48,7 +48,7 @@ class Ros2Drake(LeafSystem):
 
     def _ros_position_callback(self, msg):
         """Save new position topic messages."""
-        data = list(msg.data)
+        data = list(msg.motor_positions)
         if len(data) == 3:
             self._latest_position = np.array((data + [0.0] * self.nu)[:self.nu])
 

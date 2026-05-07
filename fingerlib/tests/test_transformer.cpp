@@ -14,12 +14,12 @@ TEST_CASE("Basic usage of Transformer class", "[Transformer]")
     const double rc = 0.0025; // pip/dip
 
     const arma::mat Ra = {{ra, 0, 0}, // splay
-                          {0, rb, 0}, // mcp
-                          {0, 0, rc}}; // pip/dip
+    {0, rb, 0},                       // mcp
+    {0, 0, rc}};                       // pip/dip
 
 
     // Structure Matrix
-    const double r11 = ra*3.5;
+    const double r11 = ra * 3.5;
     const double r1 = 8 * 0.001;
     //const double r2 = 8 * 0.001;
     const double r3 = 4.5 * 0.001;
@@ -31,16 +31,16 @@ TEST_CASE("Basic usage of Transformer class", "[Transformer]")
     const double r9 = 9 * 0.001;
     //const double r10 = 9 * 0.001;
 
-    const arma::mat St = {{r11, -r3, -r1}, //splay joint 
-                          {0, r7, r5}, //mcp joint
-                          {0, 0, r9}}; // pip/dip joint
+    const arma::mat St = {{r11, -r3, -r1}, //splay joint
+    {0, r7, r5},                       //mcp joint
+    {0, 0, r9}};                       // pip/dip joint
 
     // screw axes (x = joint, y = finger, z = up) (origin is on splay joint)
     const std::vector<arma::vec6> slist = {
-        arma::vec6({0,0,1,0,0,0}),
-        arma::vec6({-1,0,0,0,0,0.01776}),
-        arma::vec6({-1,0,0,0,0,0.07776}),
-        arma::vec6({-1,0,0,0,0,0.11836})
+    arma::vec6({0, 0, 1, 0, 0, 0}),
+    arma::vec6({-1, 0, 0, 0, 0, 0.01776}),
+    arma::vec6({-1, 0, 0, 0, 0, 0.07776}),
+    arma::vec6({-1, 0, 0, 0, 0, 0.11836})
     };
 
     const arma::vec joint_min = {-0.2, -0.2, 0};
@@ -48,16 +48,16 @@ TEST_CASE("Basic usage of Transformer class", "[Transformer]")
 
     // very simple from onshape
     const arma::mat44 M = {{1, 0, 0, 0},
-                          {0, 1, 0, 0.16},
-                          {0, 0, 1, 0},
-                          {0, 0, 0, 1}};
+    {0, 1, 0, 0.16},
+    {0, 0, 1, 0},
+    {0, 0, 0, 1}};
 
     // 4 bar lengths
     const std::vector<double> four_bar_lengths = {
-        8.83765 * 0.001,
-        40.6 * 0.001,
-        8.91536 * 0.001,
-        37.79903 * 0.001,
+    8.83765 * 0.001,
+    40.6 * 0.001,
+    8.91536 * 0.001,
+    37.79903 * 0.001,
     };
 
 
@@ -67,7 +67,7 @@ TEST_CASE("Basic usage of Transformer class", "[Transformer]")
     SECTION("Joint to motor space")
     {
         // initialize joint angle
-        arma::vec q_joint = {.1,0,0};
+        arma::vec q_joint = {.1, 0, 0};
 
         // calculate corresponding motor angles
         auto q_motor = transforms.joint_to_motor(q_joint);
@@ -82,7 +82,7 @@ TEST_CASE("Basic usage of Transformer class", "[Transformer]")
     SECTION("Motor Space to Joint Space")
     {
         // initialize motor angle
-        arma::vec q_motor = {0,0,3.6};
+        arma::vec q_motor = {0, 0, 3.6};
 
         // calculate corresponding motor angles
         auto q_joint = transforms.motor_to_joint(q_motor);
@@ -123,15 +123,15 @@ TEST_CASE("Basic usage of Transformer class", "[Transformer]")
     // from sympy, full test for this is if IK works
     SECTION("Coupled Jacobian")
     {
-        arma::vec q_joint = {0,0,0};
+        arma::vec q_joint = {0, 0, 0};
 
         arma::mat J_truth = {
-            {0.0,      -1.0,      -1.92766584},
-            {0.0,      0,        0.0       },
-            {1.0,      0.0,      0.0       },
-            {0.0,      0.0,      0.0       },
-            {0.0,      0.0,      0.0       },
-            {0.0,      0.01776,  0.18755853}
+      {0.0, -1.0, -1.92766584},
+      {0.0, 0, 0.0},
+      {1.0, 0.0, 0.0},
+      {0.0, 0.0, 0.0},
+      {0.0, 0.0, 0.0},
+      {0.0, 0.01776, 0.18755853}
         };
 
         auto J = transforms.get_jacobian_space(q_joint);
@@ -142,11 +142,11 @@ TEST_CASE("Basic usage of Transformer class", "[Transformer]")
 
     SECTION("FK")
     {
-        arma::vec q_joint = {0.1,0.5,1.5};
+        arma::vec q_joint = {0.1, 0.5, 1.5};
 
         auto q_ee = transforms.joint_to_end_effector(q_joint);
 
-        auto ee_pos = q_ee.submat(0,3,2,3);
+        auto ee_pos = q_ee.submat(0, 3, 2, 3);
 
         std::cout << ee_pos << std::endl;
 

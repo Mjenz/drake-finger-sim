@@ -25,7 +25,7 @@ class Ros2Drake(LeafSystem):
         self.torque_state_index = self.DeclareDiscreteState(self.nu)
         self.DeclarePerStepDiscreteUpdateEvent(
             self._update_torque)
-        
+
         # Output port for flex motors (all but last)
         self.DeclareVectorOutputPort(
             'motor_torque', self.nu, self._calc_torque
@@ -35,7 +35,7 @@ class Ros2Drake(LeafSystem):
         self._latest_torque = np.zeros(self.nu)
         self._sub = self._node.create_subscription(
             Float64MultiArray,
-            '/cmd_torque',
+            '/motor_pos_setpoint_feedback',
             self._ros_torque_callback,
             10,
         )
@@ -56,4 +56,3 @@ class Ros2Drake(LeafSystem):
         """Spin ROS node every time there is a simulation update for msgs."""
         rclpy.spin_once(self._node, timeout_sec=0)
         discrete_state.set_value(self._latest_torque)
-

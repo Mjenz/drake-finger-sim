@@ -1,11 +1,27 @@
 /// \file
-/// \brief coordinates motion planning for finger movement.
+/// \brief Coordinates motion planning for finger movement. Accepts action goals
+///        for cartesian, linear, and sinusoidal trajectories, generates motor
+///        position commands, and manages execution state via send/start/stop services.
 ///
 /// PARAMETERS:
-/// PUBLISHES:
+///   + max_velocity (double) - Maximum joint velocity for trajectory generation
+///   + max_acceleration (double) - Maximum joint acceleration for trajectory generation
+///   + relative_gnd_height (double) - Height of the ground relative to the finger base (should be negative)
+///
 /// SUBSCRIBES:
-/// SERVERS:
+///   + /motor_pos_actual_feedback (finger_interfaces/msg/MotorFeedback) - Actual motor positions
+///   + /motor_pos_setpoint_feedback (finger_interfaces/msg/MotorFeedback) - Setpoint motor positions
+///   + /motor_pos_activity_feedback (finger_interfaces/msg/MotorActivity) - Motor activity state
+///
+/// CLIENTS:
+///   + /send_command (finger_interfaces/srv/SendCommand) - Sends a motor position trajectory to the finger
+///   + /start_command (finger_interfaces/srv/StartStopCommand) - Starts execution of the sent trajectory
+///   + /stop_command (finger_interfaces/srv/StartStopCommand) - Stops execution of the current trajectory
+///
 /// ACTIONS:
+///   + /cartesian_move (finger_interfaces/action/Cartesian) - Move the end effector through a list of Cartesian waypoints
+///   + /sinusoidal_move (finger_interfaces/action/Sinusoidal) - Drive a single joint with a sinusoidal trajectory
+///   + /linear_move (finger_interfaces/action/Linear) - Move the end effector linearly between two joint-space points
 
 #include <chrono>
 #include <memory>
@@ -22,6 +38,7 @@
 #include "finger_interfaces/action/sinusoidal.hpp"
 #include "finger_interfaces/action/linear.hpp"
 #include "finger_interfaces/msg/motor_feedback.hpp"
+#include "finger_interfaces/msg/motor_activity.hpp"
 
 #include "fingerlib/joint_trajectory.hpp"
 
@@ -55,9 +72,9 @@ public:
     // St_  {{r11_, -r3_, -r1_},  // splay joint
     //   {0, r7_, r5_},           // mcp joint
     //   {0, 0, r9_}},            // pip/dip joint
-    St_  {{-r11_, r3_, r1_},  // splay joint
-      {0, -r7_, -r5_},           // mcp joint
-      {0, 0, -r9_}},            // pip/dip joint
+    St_  {{-r11_, r3_, r1_},      // splay joint
+      {0, -r7_, -r5_},            // mcp joint
+      {0, 0, -r9_}},              // pip/dip joint
     slist_ {arma::vec6({0, 0, 1, 0, 0, 0}),
       arma::vec6({-1, 0, 0, 0, 0, 0.01776}),
       arma::vec6({-1, 0, 0, 0, 0, 0.07776}),
@@ -98,16 +115,35 @@ public:
       joint_max_);
     generator_ = std::make_shared<JointTrajectory>(*transforms_, 100, gnd_height_);
 
-    // create drake feedback subscription, forward as feedback
-    auto motor_pos_sub_callback =
+    auto motor_pos_actual_sub_callback =
       [this](finger_interfaces::msg::MotorFeedback::UniquePtr msg) -> void {
         // save feedback
-        motor_feedback_ = *msg;
+        motor_actual_feedback_ = *msg;
       };
 
-    motor_feedback_sub_ =
-      create_subscription<finger_interfaces::msg::MotorFeedback>("/motor_pos_action_feedback",
-      10, motor_pos_sub_callback);
+    motor_actual_feedback_sub_ =
+      create_subscription<finger_interfaces::msg::MotorFeedback>("/motor_pos_actual_feedback",
+      10, motor_pos_actual_sub_callback);
+
+    auto motor_pos_setpoint_sub_callback =
+      [this](finger_interfaces::msg::MotorFeedback::UniquePtr msg) -> void {
+        // save feedback
+        motor_setpoint_feedback_ = *msg;
+      };
+
+    motor_setpoint_feedback_sub_ =
+      create_subscription<finger_interfaces::msg::MotorFeedback>("/motor_pos_setpoint_feedback",
+      10, motor_pos_setpoint_sub_callback);
+
+    auto motor_activity_sub_callback =
+      [this](finger_interfaces::msg::MotorActivity::UniquePtr msg) -> void {
+        // save feedback
+        motor_activity_feedback_ = *msg;
+      };
+
+    motor_activity_feedback_sub_ =
+      create_subscription<finger_interfaces::msg::MotorActivity>("/motor_pos_activity_feedback", 10,
+      motor_activity_sub_callback);
 
     // create clients
     send_cb_group_ = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
@@ -370,7 +406,11 @@ private:
   int msg_attempts_;
 
   CmdState cmd_state_;
-  rclcpp::Subscription<finger_interfaces::msg::MotorFeedback>::SharedPtr motor_feedback_sub_;
+  rclcpp::Subscription<finger_interfaces::msg::MotorFeedback>::SharedPtr motor_actual_feedback_sub_;
+  rclcpp::Subscription<finger_interfaces::msg::MotorFeedback>::SharedPtr
+    motor_setpoint_feedback_sub_;
+  rclcpp::Subscription<finger_interfaces::msg::MotorActivity>::SharedPtr
+    motor_activity_feedback_sub_;
   rclcpp::Client<finger_interfaces::srv::SendCommand>::SharedPtr send_client_;
   rclcpp::Client<finger_interfaces::srv::StartStopCommand>::SharedPtr start_client_;
   rclcpp::Client<finger_interfaces::srv::StartStopCommand>::SharedPtr stop_client_;
@@ -388,7 +428,9 @@ private:
   std::shared_ptr<finger_interfaces::action::Cartesian::Result> cartesian_result_;
   std::shared_ptr<finger_interfaces::action::Sinusoidal::Result> sinusoidal_result_;
   std::shared_ptr<finger_interfaces::action::Linear::Result> linear_result_;
-  finger_interfaces::msg::MotorFeedback motor_feedback_;
+  finger_interfaces::msg::MotorFeedback motor_actual_feedback_;
+  finger_interfaces::msg::MotorFeedback motor_setpoint_feedback_;
+  finger_interfaces::msg::MotorActivity motor_activity_feedback_;
 
   double max_vel_;
   double max_accel_;
@@ -407,7 +449,7 @@ private:
   {
     if (future.get().second->success == 1) {
       // if there is a success function, call it
-      if (on_success) on_success(result);
+      if (on_success) {on_success(result);}
 
       // update state to next case
       cmd_state_ = success_state;
@@ -483,9 +525,9 @@ private:
       send_client_->async_send_request(rq,
         [this, goal_handle, result](
           rclcpp::Client<finger_interfaces::srv::SendCommand>::SharedFutureWithRequest future) {
-            handle_service_response<typename ActionT::Result>(
+          handle_service_response<typename ActionT::Result>(
               future, result,
-              [goal_handle](auto r){ goal_handle->abort(r); },
+            [goal_handle](auto r){goal_handle->abort(r);},
               CmdState::RECEIVED, CmdState::BEGIN,
               "Failed to send 'send' message.");
           });
@@ -498,11 +540,12 @@ private:
       // send start command
       auto rq = std::make_shared<finger_interfaces::srv::StartStopCommand::Request>();
       auto result_future = start_client_->async_send_request(rq,
-        [this, goal_handle, result](
-          rclcpp::Client<finger_interfaces::srv::StartStopCommand>::SharedFutureWithRequest future) {
+          [this, goal_handle, result](
+            rclcpp::Client<finger_interfaces::srv::StartStopCommand>::SharedFutureWithRequest future)
+          {
             handle_service_response<typename ActionT::Result>(
               future, result,
-              [goal_handle](auto r){ goal_handle->abort(r); },
+              [goal_handle](auto r){goal_handle->abort(r);},
               CmdState::STARTED, CmdState::RECEIVED,
               "Failed to send 'start' message.");
           });
@@ -513,7 +556,7 @@ private:
     } else if (cmd_state_ == CmdState::STARTED) {
       RCLCPP_INFO_ONCE(get_logger(), "Working...");
 
-      if (motor_feedback_.active < 1e-4 && motor_feedback_.active > -1e-4) {
+      if (motor_activity_feedback_.active < 1e-4 && motor_activity_feedback_.active > -1e-4) {
         // move to stopping once movement complete
         cmd_state_ = CmdState::STOPPING;
 
@@ -521,20 +564,21 @@ private:
         goal_handle->succeed(result);
 
       }
-    
+
     } else if (cmd_state_ == CmdState::CANCELLED) {
 
       // send stop command
       auto rq = std::make_shared<finger_interfaces::srv::StartStopCommand::Request>();
       auto result_future = stop_client_->async_send_request(rq,
-        [this, goal_handle, result](
-          rclcpp::Client<finger_interfaces::srv::StartStopCommand>::SharedFutureWithRequest future) {
+          [this, goal_handle, result](
+            rclcpp::Client<finger_interfaces::srv::StartStopCommand>::SharedFutureWithRequest future)
+          {
             handle_service_response<typename ActionT::Result>(
               future, result,
-              [goal_handle](auto r){ goal_handle->abort(r); },
+              [goal_handle](auto r){goal_handle->abort(r);},
               CmdState::STOPPING, CmdState::CANCELLED,
               "Failed to send 'stop' message.",
-              [goal_handle, result](auto r){ result->success = 0; goal_handle->canceled(r); });
+              [goal_handle, result](auto r){result->success = 0; goal_handle->canceled(r);});
           });
 
       cmd_state_ = CmdState::IDLE;
@@ -554,7 +598,7 @@ private:
       [this](const auto & goal) {
         // check that requested waypoints are same length
         if ((goal.length == int(goal.x.size())) && (goal.length == int(goal.y.size())) &&
-          (goal.length == int(goal.z.size())))
+        (goal.length == int(goal.z.size())))
         {
           // save waypoints as vector
           auto waypoints_temp = std::vector<arma::vec>();
@@ -566,7 +610,7 @@ private:
           goal.length);
 
           // check that waypoints are within the joint limits
-          
+
           RCLCPP_INFO_STREAM(get_logger(),
           "waypoint 0: (" << goal.x.at(0) << ", " << goal.y.at(0) << ", " << goal.z.at(0) <<
             ")");
@@ -598,8 +642,11 @@ private:
     execute_goal<finger_interfaces::action::Linear>(
       goal_handle, linear_result_,
       [this](const auto & goal) {
-        RCLCPP_INFO_STREAM(get_logger(), "start: (" << goal.start.at(0) << ", " << goal.start.at(1) << ", " << goal.start.at(2) << ")");
-        RCLCPP_INFO_STREAM(get_logger(), "end: (" << goal.end.at(0) << ", " << goal.end.at(1) << ", " << goal.end.at(2) << ")");
+        RCLCPP_INFO_STREAM(get_logger(),
+        "start: (" << goal.start.at(0) << ", " << goal.start.at(1) << ", " << goal.start.at(2) <<
+          ")");
+        RCLCPP_INFO_STREAM(get_logger(),
+        "end: (" << goal.end.at(0) << ", " << goal.end.at(1) << ", " << goal.end.at(2) << ")");
 
         arma::vec start_vec = {goal.start.at(0), goal.start.at(1), goal.start.at(2)};
         arma::vec end_vec = {goal.end.at(0), goal.end.at(1), goal.end.at(2)};

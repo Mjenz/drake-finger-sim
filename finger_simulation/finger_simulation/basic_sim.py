@@ -1,6 +1,20 @@
-"""Runs drake simulation of robotic finger."""
+"""
+Runs the Drake simulation of the robotic finger.
 
+Loads the finger URDF and scene models, wires up the Drake systems for motor
+position to tendon to joint mapping, and steps the simulation in real time.
+Exposes a heartbeat service to signal that Drake has finished initializing.
+
+SUBSCRIBERS:
+  + /motor_pos_setpoint_feedback (finger_interfaces/msg/MotorFeedback)
+    - Motor position setpoints consumed by Ros2Drake
+
+SERVERS:
+  + /heartbeat (std_srvs/srv/Empty)
+    - Indicates that the Drake simulation has finished initializing
+"""
 import os
+import sys
 
 from ament_index_python.packages import get_package_share_directory
 
@@ -9,16 +23,13 @@ from drake_ros.core import ClockSystem, RosInterfaceSystem
 from drake_ros.tf2 import SceneTfBroadcasterParams, SceneTfBroadcasterSystem
 from drake_ros.viz import RvizVisualizer, RvizVisualizerParams
 
-from finger_simulation.systems.drake2ros_system import Drake2Ros
+from finger_simulation.systems.drake2ros_system_kinematic import Drake2Ros
 from finger_simulation.systems.finger_pulley_system import FingerPulleySystem
-from finger_simulation.systems.motor_feedback_system import MotorFeedbackSystem
 from finger_simulation.systems.motor_radius_system import (
     MotorTorqueToForceSystem
 )
-from finger_simulation.systems.ros2drake_system_position import Ros2Drake
-from finger_simulation.systems.tendon_feedback_system import (
-    TendonFeedbackSystem
-)
+from finger_simulation.systems.ros2drake_system_kinematic import Ros2Drake
+
 
 import numpy as np
 
@@ -44,7 +55,7 @@ class FingerSimulation():
     def __init__(self):
         """Create instance of FingerSimulation."""
         self.builder = DiagramBuilder()
-        drake_ros.core.init()
+        drake_ros.core.init(args=sys.argv)
 
         # init time step
         self.dt = 0.001
@@ -234,7 +245,9 @@ class FingerSimulation():
             dip.set_angle(self.plant_context, 0.85 * q[2])  # mimic
 
             # zero velocities to prevent any drift from integration
-            self.plant.SetVelocities(self.plant_context, self.finger,
+            self.plant.SetVelocities(
+                self.plant_context,
+                self.finger,
                 np.zeros(self.plant.num_velocities(self.finger)))
 
             next_time = self.simulator_context.get_time() + self.dt
@@ -288,9 +301,7 @@ def main():
     rclpy.init(args=None)
     node = rclpy.create_node('drakesim')
 
-
-
-    # add external systems
+       # add external systems
     ros2drake_system = fingersim.builder.AddSystem(Ros2Drake(node))
 
     motor_torque_to_force_system = fingersim.builder.AddSystem(
@@ -300,26 +311,14 @@ def main():
         FingerPulleySystem())
     fingersim.motor_tension_to_joint_torque_system = (
         motor_tension_to_joint_torque_system)
-    
-    # tendon_feedback_system = fingersim.builder.AddSystem(
-    #     TendonFeedbackSystem())
 
-    # motor_feedback_system = fingersim.builder.AddSystem(
-    #     MotorFeedbackSystem())
-    # drake2ros_system = fingersim.builder.AddSystem(Drake2Ros(node))
+    drake2ros_system = fingersim.builder.AddSystem(Drake2Ros(node))
 
-    # fingersim.builder.Connect(
-    #     ros2drake_system.GetOutputPort('motor_torque'),
-    #     motor_torque_to_force_system.GetInputPort('motor_torque'),
-    # )
     fingersim.builder.Connect(
         ros2drake_system.GetOutputPort('motor_position'),
         motor_torque_to_force_system.GetInputPort('motor_position'),
     )
-    # fingersim.builder.Connect(
-    #     motor_torque_to_force_system.GetOutputPort('tendon_tension'),
-    #     motor_tension_to_joint_torque_system.GetInputPort('tendon_tension'),
-    # )
+
     fingersim.builder.Connect(
         motor_torque_to_force_system.GetOutputPort('tendon_position'),
         motor_tension_to_joint_torque_system.GetInputPort('tendon_position'),
@@ -332,10 +331,10 @@ def main():
     #     motor_tension_to_joint_torque_system.GetOutputPort('joint_position'),
     #     fingersim.plant.get_(fingersim.finger),
     # )
-    # fingersim.builder.Connect(
-    #     fingersim.plant.get_state_output_port(fingersim.finger),
-    #     tendon_feedback_system.GetInputPort('finger_state'),
-    # )
+    fingersim.builder.Connect(
+        fingersim.plant.get_state_output_port(fingersim.finger),
+        drake2ros_system.GetInputPort('finger_state'),
+    )
     # fingersim.builder.Connect(
     #     motor_torque_to_force_system.GetOutputPort('tendon_tension'),
     #     tendon_feedback_system.GetInputPort('tendon_tension'),

@@ -20,8 +20,6 @@ class MotorTorqueToForceSystem(LeafSystem):
                             [0, rb, 0],
                             [0, 0, rc]])
 
-        # self.R_inv = np.linalg.pinv(self.Ra)  # invert
-
         nu = 3
 
         # declare input and output ports with functions

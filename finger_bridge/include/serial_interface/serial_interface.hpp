@@ -75,6 +75,12 @@ private:
   float _mcp_flex_motor_pos;
   /// \brief The PIP flex motor position
   float _pip_flex_motor_pos;
+    /// \brief The MCP splay motor position command
+  float cmd_mcp_splay_motor_pos_;
+  /// \brief The MCP felx motor position command
+  float cmd_mcp_flex_motor_pos_;
+  /// \brief The PIP flex motor position command
+  float cmd_pip_flex_motor_pos_;
   /// \brief State variable showing if control is active
   float _active;
 
