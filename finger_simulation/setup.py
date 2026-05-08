@@ -40,7 +40,7 @@ setup(
     maintainer='Mjenz',
     maintainer_email='michael.jenz77@gmail.com',
     description='Simulate robotic finger in Drake',
-    license='MIT',
+    license=' Apache 2.0',
     extras_require={
         'test': [
             'pytest',

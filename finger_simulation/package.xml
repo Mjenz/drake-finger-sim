@@ -5,7 +5,7 @@
   <version>0.0.0</version>
   <description>Simulate robotic finger in Drake</description>
   <maintainer email="michael.jenz77@gmail.com">Mjenz</maintainer>
-  <license>MIT</license>
+  <license> Apache 2.0</license>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

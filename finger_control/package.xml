@@ -5,7 +5,7 @@
   <version>0.0.0</version>
   <description>Runs high level control coordinating perception and movement commands</description>
   <maintainer email="michael.jenz77@gmail.com">Mjenz</maintainer>
-  <license>MIT</license>
+  <license> Apache 2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 

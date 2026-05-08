@@ -17,7 +17,7 @@ setup(
     maintainer='Mjenz',
     maintainer_email='michael.jenz77@gmail.com',
     description='Records finger data.',
-    license='MIT',
+    license=' Apache 2.0',
     extras_require={
         'test': [
             'pytest',
