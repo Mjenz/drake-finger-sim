@@ -82,27 +82,62 @@ public:
     // sleep for 1 second
     rclcpp::sleep_for(3000ms);
 
+
+    // // JOINT STEP MOTION DEMO
+
     // // send test linear command
     // std::vector<float> start_joint_loc = {0.0, 0.0, 0.0};
     // std::vector<float> end_joint_loc = {0.0, 1.256, 0.0};
-    // for (auto i = 0; i < 20; i++) {
+    // for (auto i = 0; i < 10; i++) {
+    //   send_linear_goal(start_joint_loc, end_joint_loc);
+    //   send_linear_goal(end_joint_loc, start_joint_loc);
+    // }
+
+    // // send test linear command
+    // start_joint_loc = {0.0, 0.0, 0.0};
+    // end_joint_loc = {0.0, 0.0, 1.256};
+    // for (auto i = 0; i < 10; i++) {
     //   send_linear_goal(start_joint_loc, end_joint_loc);
     //   send_linear_goal(end_joint_loc, start_joint_loc);
     // }
 
 
-    // send test sinusoidal command
-    send_sinusoid_goal(1, 1, 0.471, 10.0, 0.7);
+    // // send test sinusoidal command
+    // send_sinusoid_goal(1, 2, 0.471, 10.0, 0.7);
 
-    // // // send test cartesi2an command
-    // std::vector<float> start = {0, 0.15, -0.05};
-    // std::vector<float> end = {0, 0.08, -0.1};
-    // std::vector<std::vector<float>> waypoints = {start, end};
-    // send_cartesian_goal(waypoints);
+    // ik demo
+    std::vector<float> start = {0.05f, 0.1f, -0.1f};            
+    std::vector<float> end   = {-0.05f, 0.1f, -0.1f};
+                                                                
+    for (auto i = 0; i < 20; i++) {
+        send_cartesian_goal({start, end});        
+        send_cartesian_goal({end, start});
+    }   
 
-    // // go back now
-    // waypoints = {end, start};
-    // send_cartesian_goal(waypoints);
+  // // IK DEMO
+
+  // // pseudo cartesian movements
+  // auto lerp_waypoints = [](const std::vector<float>& start,
+  //   const std::vector<float>& end, int n = 30) {                
+  //       std::vector<std::vector<float>> points;
+  //       for (int i = 0; i <= n; ++i) {                          
+  //           float t = static_cast<float>(i) / n;
+  //           points.push_back({                                  
+  //               start[0] + t * (end[0] - start[0]),
+  //               start[1] + t * (end[1] - start[1]),             
+  //               start[2] + t * (end[2] - start[2])              
+  //           });
+  //       }                                                       
+  //       return points;   
+  //   };
+
+  //   std::vector<float> start = {0.05f, 0.1f, -0.1f};            
+  //   std::vector<float> end   = {-0.05f, 0.1f, -0.1f};
+                                                                
+  //   for (auto i = 0; i < 20; i++) {
+  //       send_cartesian_goal(lerp_waypoints(start, end));        
+  //       send_cartesian_goal(lerp_waypoints(end, start));
+  //   }      
   }
 
 private:

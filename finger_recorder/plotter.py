@@ -13,14 +13,14 @@ import rosbag2_py
 JOINT_LABELS = ['splay', 'mcp_flex', 'pip/dip_flex']
 
 TOPICS = {
-    'motor_pos_actual_feedback':   ('motor_pos', 'actual'),
-    'motor_pos_setpoint_feedback': ('motor_pos', 'setpoint'),
+    # 'motor_pos_actual_feedback':   ('motor_pos', 'actual'),
+    # 'motor_pos_setpoint_feedback': ('motor_pos', 'setpoint'),
     'actual/joint_feedback':       ('joint_angle', 'actual'),
     'setpoint/joint_feedback':     ('joint_angle', 'setpoint'),
 }
 
 data = {
-    'motor_pos':   {'actual': [], 'setpoint': []},
+    # 'motor_pos':   {'actual': [], 'setpoint': []},
     'joint_angle': {'actual': [], 'setpoint': []},
 }
 
@@ -28,7 +28,7 @@ reader = rosbag2_py.SequentialReader()
 reader.open(
     rosbag2_py.StorageOptions(
         uri='src/robotic-finger-simulation/finger_recorder/bags/\
-finger_bag_20260506_234030',
+finger_bag_20260508_122811',
         storage_id='mcap'),
     rosbag2_py.ConverterOptions('', ''))
 
@@ -45,6 +45,7 @@ fig, axes = plt.subplots(len(JOINT_LABELS), 2, figsize=(14, 8), sharex=True)
 
 for col, (group, title) in enumerate([('motor_pos', 'Motor Position'),
                                        ('joint_angle', 'Joint Angle')]):
+
     for i, label in enumerate(JOINT_LABELS):
         ax = axes[i, col]
         for series_name, color in [('actual', 'tab:blue'), ('setpoint', 'tab:orange')]:

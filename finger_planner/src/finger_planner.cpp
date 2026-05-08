@@ -69,18 +69,15 @@ public:
     Ra_ {{ra_, 0, 0},          // splay
       {0, rb_, 0},             // mcp
       {0, 0, rc_}},            // pip/dip
-    // St_  {{r11_, -r3_, -r1_},  // splay joint
-    //   {0, r7_, r5_},           // mcp joint
-    //   {0, 0, r9_}},            // pip/dip joint
-    St_  {{-r11_, r3_, r1_},      // splay joint
+    St_  {{r11_, -r3_, r1_},      // splay joint
       {0, -r7_, -r5_},            // mcp joint
       {0, 0, -r9_}},              // pip/dip joint
     slist_ {arma::vec6({0, 0, 1, 0, 0, 0}),
       arma::vec6({-1, 0, 0, 0, 0, 0.01776}),
       arma::vec6({-1, 0, 0, 0, 0, 0.07776}),
       arma::vec6({-1, 0, 0, 0, 0, 0.11836})},
-    joint_min_ {-0.2, -0.2, -0.01},
-    joint_max_ {0.2, 1.572, 1.572},
+    joint_min_ {-0.55, -0.2, -0.01},
+    joint_max_ {0.55, 1.572, 1.572},
     M_ {{1, 0, 0, 0},
       {0, 1, 0, 0.16},
       {0, 0, 1, 0},
