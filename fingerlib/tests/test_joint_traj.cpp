@@ -32,9 +32,9 @@ TEST_CASE("Basic usage of JointTrajectory class", "[JointTrajectory]")
     const double r9 = 9 * 0.001;
     //const double r10 = 9 * 0.001;
 
-    const arma::mat St = {{r11, -r3, -r1}, //splay joint
-    {0, r7, r5},                       //mcp joint
-    {0, 0, r9}};                       // pip/dip joint
+    const arma::mat St = {{r11, -r3, r1}, //splay joint
+    {0, -r7, -r5},                       //mcp joint
+    {0, 0, -r9}};                       // pip/dip joint
 
     // screw axes (x = joint, y = finger, z = up) (origin is on splay joint)
     const std::vector<arma::vec6> slist = {
@@ -49,7 +49,7 @@ TEST_CASE("Basic usage of JointTrajectory class", "[JointTrajectory]")
 
     // very simple from onshape
     const arma::mat44 M = {{1, 0, 0, 0},
-    {0, 1, 0, 0.16},
+    {0, 1, 0, 0.15},
     {0, 0, 1, 0},
     {0, 0, 0, 1}};
 
@@ -133,6 +133,20 @@ TEST_CASE("Basic usage of JointTrajectory class", "[JointTrajectory]")
 
         // for(auto q_motor: q_motor_list){
         //     std::cout << q_motor << std::endl;
+        // }
+    }
+
+    SECTION("Foce Control")
+    {
+        arma::vec force_low = {0, 0.0, 1.0};
+        arma::vec force_high = {0, 0.0, 20.0};
+
+        arma::vec q_joint = {0, 0, 0};
+
+        auto t_motor_list = generator.generate_force_step(q_joint, force_low, force_high, 1.0);
+
+        // for(auto t_motor: t_motor_list){
+        //     std::cout << t_motor << std::endl;
         // }
     }
 }

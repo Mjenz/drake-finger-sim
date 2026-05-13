@@ -38,6 +38,31 @@ std::vector<arma::vec> JointTrajectory::generate_sinusoid(
   return q_motor_list;
 }
 
+std::vector<arma::vec> JointTrajectory::generate_step(
+  int joint, double amp, double freq,
+  double v_shift)
+{
+  int N = std::ceil((double)_sampling_rate / freq);
+
+  std::vector<arma::vec> q_motor_list;
+  q_motor_list.reserve(N);
+
+  for(double t = 0; t < 1.0 / freq; t += 1.0 / _sampling_rate) {
+
+    double step_value = (std::sin(2 * M_PI * freq * t) >= 0) ? amp + v_shift : v_shift;
+
+    arma::vec q_joint(3, arma::fill::zeros);
+
+    if(joint >= 0 && joint <= 2) {
+      q_joint(joint) = step_value;
+    }
+
+    q_motor_list.push_back(_transforms.joint_to_motor(q_joint));
+  }
+
+  return q_motor_list;
+}
+
 std::vector<arma::vec> JointTrajectory::generate_linear(
   arma::vec start, arma::vec end,
   double v_max, double a_max)
@@ -82,6 +107,42 @@ std::vector<arma::vec> JointTrajectory::generate_cartesian(
   }
 
   return trajectory;
+}
+
+std::vector<arma::vec> JointTrajectory::generate_force_step(
+  const arma::vec & q_joint, 
+  const arma::vec & force_low, 
+  const arma::vec & force_high, 
+  double freq)
+{
+
+  int N = std::ceil((double)_sampling_rate / freq);
+  auto J = _transforms.get_jacobian_body(q_joint);
+
+  std::cout << "Jacobian at q_joint: " << std::endl << J << std::endl;
+
+  std::vector<arma::vec> t_motor_list;
+  t_motor_list.reserve(N);
+
+  for(double t = 0; t < 1.0 / freq; t += 1.0 / _sampling_rate) {
+
+    arma::vec force_value = (std::sin(2 * M_PI * freq * t) >= 0) ? force_high : force_low;
+
+    arma::vec wrench (6, arma::fill::zeros);
+    wrench.tail(3) = force_value;
+
+    auto J_t = J.t();
+
+    auto t_joint = J_t * wrench;  // Convert force to joint torques
+
+    t_motor_list.push_back(_transforms.joint_to_motor_torque(t_joint));
+
+    std::cout << "force_value: " << force_value.t() << std::endl;
+    std::cout << "t_joint: " << t_joint.t() << std::endl;
+    std::cout << "t_motor: " << t_motor_list.back().t() << std::endl;
+  }
+
+  return t_motor_list;
 }
 
 double JointTrajectory::TrapezoidalTimeScaling(

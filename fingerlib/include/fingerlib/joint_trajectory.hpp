@@ -22,6 +22,14 @@ public:
     /// \return A vector of motor positions corresponding to the generated sinusoidal trajectory
   std::vector<arma::vec> generate_sinusoid(int joint, double amp, double freq, double v_shift);
 
+    /// \brief Generate a step trajectory for a specified joint + parameters
+    /// \param joint - The index of the joint to generate the step for (0, 1, or 2)
+    /// \param amp - The amplitude of the step (in radians)
+    /// \param freq - The frequency of the step (in Hz)
+    /// \param v_shift - The vertical shift of the step (in radians)
+    /// \return A vector of motor positions corresponding to the generated step trajectory
+  std::vector<arma::vec> generate_step(int joint, double amp, double freq, double v_shift);
+
     /// \brief Generate a linear trajectory with trapezoidal time scaling
     /// \param start - joint space starting point
     /// \param end - joint space ending point
@@ -41,6 +49,18 @@ public:
   std::vector<arma::vec> generate_cartesian(
     std::vector<arma::vec> waypoints, double v_max,
     double a_max);
+
+    /// \brief Generate a trajectory that applies a step force at the end-effector
+    /// \param q_joint - the joint position at which to apply the force step (x,y,z)
+    /// \param force_low - the lower bound of the force step (in Newtons)
+    /// \param force_high - the upper bound of the force step (in Newtons)
+    /// \param freq - the frequency of the force step (in Hz)
+    /// \return a vector of motor positions corresponding to the generated force step trajectory
+  std::vector<arma::vec> generate_force_step(
+    const arma::vec & q_joint, 
+    const arma::vec & force_low, 
+    const arma::vec & force_high, 
+    double freq);
 
 private:
     /// \brief The transformer object for converting between joint and motor space

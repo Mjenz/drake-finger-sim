@@ -51,6 +51,13 @@ arma::vec Transformer::motor_to_joint(const arma::vec & q_motor)
   return q_joint;
 }
 
+arma::vec Transformer::joint_to_motor_torque(const arma::vec & t_joint)
+{
+  arma::vec f_tendon = _structure_inv * t_joint;
+  arma::vec t_motor = _Ra * f_tendon;
+  return t_motor;
+}
+
 arma::mat Transformer::get_jacobian_space(const arma::vec & q_joint)
 {
     //TODO: come back to this and make sure its correct
@@ -61,6 +68,14 @@ arma::mat Transformer::get_jacobian_space(const arma::vec & q_joint)
   auto J = J_full.cols(0, 2);   // only the first 3 columns are relevant for the 3 joints
   J.col(2) = J_full.col(2) + J_full.col(3) * speed_ratio; // add the contribution from the 4-bar linkage
   return J;
+}
+
+arma::mat Transformer::get_jacobian_body(const arma::vec & q_joint)
+{
+  auto J_s = get_jacobian_space(q_joint);
+  auto T_sb = joint_to_end_effector(q_joint);
+  auto J_b = mr::Adjoint(arma::inv(T_sb)) * J_s;
+  return J_b;
 }
 
 // the plan:

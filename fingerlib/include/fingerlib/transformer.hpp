@@ -38,6 +38,11 @@ public:
 /// \return The joint angles corresponding to the given motor positions
   arma::vec motor_to_joint(const arma::vec & q_motor);
 
+  /// @brief Convert joint torques to motor torques
+  /// @param t_joint The joint torques
+  /// @return The motor torques corresponding to the given joint torques
+  arma::vec joint_to_motor_torque(const arma::vec & t_joint);
+
 /// \brief Convert joint angles to end-effector position
 /// \param q_joint The joint angles (in radians)
 /// \return The end-effector transformation matrix corresponding to the given joint angles
@@ -48,10 +53,16 @@ public:
 /// \return The joint angles corresponding to the given end-effector position
   arma::vec end_effector_to_joint(const arma::vec & q_end_effector);
 
+
 /// \brief Get the Jacobian matrix in space frame (collapsed for pip/dip)
 /// \param q_joint The joint angles (in radians)
 /// \return The Jacobian matrix in space frame
   arma::mat get_jacobian_space(const arma::vec & q_joint);
+
+/// \brief Get the Jacobian matrix in body frame (collapsed for pip/dip)
+/// \param q_joint The joint angles (in radians)
+/// \return The Jacobian matrix in body frame
+  arma::mat get_jacobian_body(const arma::vec & q_joint);
 
 /// \brief Calculate the 4-bar linkage ratios (dip angle and speed ratio) based on the pip angle
 /// \param pip_angle The angle of the pip joint (in radians)
