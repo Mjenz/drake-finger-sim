@@ -14,9 +14,26 @@ find_package(finger_interfaces REQUIRED)
 find_package(fingerlib REQUIRED)
 find_package(modern_robotics REQUIRED)
 
-add_executable(finger_control src/finger_control.cpp)
+# Create a library.
+add_library(finger_control
+    include/finger_control/finger_control_base.hpp
+)
 
-target_link_libraries(finger_control
+# Use target_include_directories so that #include"finger_control/header.hpp" works
+target_include_directories(finger_control
+    PUBLIC
+    ${serial_INCLUDE_DIRS}
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/>
+    $<INSTALL_INTERFACE:include/>
+)
+
+# specify additional compilation flags for the library
+target_compile_options(finger_control PUBLIC -Wall -Wextra -pedantic)
+
+# Enable c++23 support.
+target_compile_features(finger_control PUBLIC cxx_std_23)
+
+target_link_libraries(finger_control PUBLIC
   rclcpp::rclcpp
   rclcpp_action::rclcpp_action
   ${std_msgs_TARGETS}
@@ -24,6 +41,17 @@ target_link_libraries(finger_control
   ${finger_interfaces_TARGETS}
   ${ARMADILLO_LIBRARIES}
   fingerlib::fingerlib
+)
+
+add_executable(demo src/demo.cpp)
+add_executable(control src/whackamole.cpp)
+
+target_link_libraries(control
+  finger_control
+)
+
+target_link_libraries(demo
+  finger_control
 )
 
 if(BUILD_TESTING)
@@ -38,7 +66,7 @@ install(
   DESTINATION share/${PROJECT_NAME}
 )
 
-install(TARGETS finger_control
+install(TARGETS control demo
   DESTINATION lib/${PROJECT_NAME}
 )
 

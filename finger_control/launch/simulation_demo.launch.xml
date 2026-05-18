@@ -8,6 +8,15 @@
     <choice value="true" />
     <choice value="false" />
   </arg>
+
+  <arg name="demo" default="none" description="Select the demo to run.">
+    <choice value="force_step" />
+    <choice value="sinusoid" />
+    <choice value="linear" />
+    <choice value="ik" />
+    <choice value="cartesian_ik" />
+    <choice value="none" />
+  </arg>
   
   <node pkg="rviz2" exec="rviz2" args="-d $(find-pkg-share finger_simulation)/config/base_sim.rviz" if="$(eval '\'$(var use_rviz)\'==\'true\'')" on_exit="shutdown"/>  
 
@@ -28,8 +37,9 @@
     <param from="$(find-pkg-share finger_planner)/config/movement_config.yaml"/>
   </node>
 
-  <node pkg="finger_control" exec="finger_control" output="screen">
+  <node pkg="finger_control" exec="demo" output="screen">
       <param from="$(find-pkg-share finger_planner)/config/movement_config.yaml"/>
+      <param name="demo" value="$(var demo)" />
   </node>
 
   <node pkg="finger_recorder" exec="record" if="$(eval '\'$(var record)\'==\'true\'')" output="screen"/>
