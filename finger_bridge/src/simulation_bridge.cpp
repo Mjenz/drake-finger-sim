@@ -143,9 +143,9 @@ public:
       create_publisher<finger_interfaces::msg::MotorActivity>("/motor_pos_activity_feedback", 10);
 
     // init motor feedback as zeros
-    motor_actual_feedback_.motor_positions = {0.0, 0.0, 0.0};
-    motor_setpoint_feedback_.motor_positions = {0.0, 0.0, 0.0};
-    motor_activity_feedback_.active = 0.0;
+    actual_feedback_.motor_positions = std::vector<float>{0.0, 0.0, 0.0};
+    setpoint_feedback_.motor_positions = std::vector<float>{0.0, 0.0, 0.0};
+    activity_feedback_.active = 0.0;
 
     // define timer callback and init
     auto command_sender_timer_callback =
@@ -176,10 +176,10 @@ public:
         }
 
         // publish same as feedback
-        activity_feedback.active = (state_ == State::READY) ? 1.0 : 0.0;
+        activity_feedback_.active = (state_ == State::READY) ? 1.0 : 0.0;
         actual_feedback_pub_->publish(actual_feedback_);
         setpoint_feedback_pub_->publish(setpoint_feedback_);
-        activity_feedback_pub_->publish(activity_feedback);
+        activity_feedback_pub_->publish(activity_feedback_);
       };
     timer_ = this->create_wall_timer(10ms, command_sender_timer_callback);
   }
@@ -189,10 +189,7 @@ private:
   State state_;
   finger_interfaces::msg::MotorFeedback actual_feedback_;
   finger_interfaces::msg::MotorFeedback setpoint_feedback_;
-  finger_interfaces::msg::MotorActivity activity_feedback;
-  finger_interfaces::msg::MotorFeedback motor_actual_feedback_;
-  finger_interfaces::msg::MotorFeedback motor_setpoint_feedback_;
-  finger_interfaces::msg::MotorActivity motor_activity_feedback_;
+  finger_interfaces::msg::MotorActivity activity_feedback_;
   rclcpp::Publisher<finger_interfaces::msg::MotorFeedback>::SharedPtr actual_feedback_pub_;
   rclcpp::Publisher<finger_interfaces::msg::MotorFeedback>::SharedPtr setpoint_feedback_pub_;
   rclcpp::Publisher<finger_interfaces::msg::MotorActivity>::SharedPtr activity_feedback_pub_;

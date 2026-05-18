@@ -23,7 +23,7 @@ add_library(serialinterface
     src/serial_interface.cpp
 )
 
-# Use target_include_directories so that #include"fingerlib/header.hpp" works
+# Use target_include_directories so that #include"serialinterface/header.hpp" works
 target_include_directories(serialinterface
     PUBLIC
     ${serial_INCLUDE_DIRS}
