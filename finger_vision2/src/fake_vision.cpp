@@ -9,6 +9,7 @@
 ///   + ~/detections (ryan_interfaces/msg/Detection) - Publishes bounding boxes, image size, and depth of detected faces
 ///   + ~/bbox_marker (visualization_msgs/msg/Marker) - Publishes a 3D sphere marker for the current detection in base_link
 ///   + /tf (tf2_msgs/msg/TFMessage) - Broadcasts goal frame relative to speedster_finger/base_link
+
 #include <chrono>
 #include <cmath>
 #include <memory>
@@ -77,7 +78,7 @@ public:
     splay_d_ = std::uniform_real_distribution<>(joint_min_.at(0), joint_max_.at(0));
     mcpflex_d_ = std::uniform_real_distribution<>(joint_min_.at(1), joint_max_.at(1));
     pipflex_d_ = std::uniform_real_distribution<>(joint_min_.at(2), joint_max_.at(2));
-    norm_count_d_ = std::normal_distribution<>(100.0, 50.0);
+    norm_count_d_ = std::normal_distribution<>(50.0, 10.0);
 
     // init max count
     max_count_ =  std::max(1, static_cast<int>(norm_count_d_(get_random())));
@@ -108,7 +109,7 @@ public:
 
     timer_ = create_wall_timer(100ms, timer_callback);
 
-    RCLCPP_INFO(get_logger(), "ryan_vision node started");
+    RCLCPP_INFO(get_logger(), "fake_vision node started");
   }
 
 private:
@@ -119,7 +120,7 @@ private:
     arma::mat44 rand_cartesian = transforms_->joint_to_end_effector(rand_joint_q);
         
     goal_tf_.header.frame_id = "base_frame";
-    goal_tf_.child_frame_id = "goal_" + std::to_string(id_++);
+    goal_tf_.child_frame_id = "goal"; //_" + std::to_string(id_++);
     goal_tf_.transform.translation.x = rand_cartesian(0,3);
     goal_tf_.transform.translation.y = rand_cartesian(1,3);
     goal_tf_.transform.translation.z = rand_cartesian(2,3);
