@@ -66,28 +66,6 @@ public:
 
   FingerPlanner()
   : Node("finger_planner"),
-    ra_ (0.0025), rb_ (0.0025), rc_ (0.0025),
-    r1_ (0.008), r3_ (0.0045), r5_ (0.008), r7_ (0.0045), r9_ (0.009), r11_ (ra_ * 3.5),
-    Ra_ {{ra_, 0, 0},          // splay
-      {0, rb_, 0},             // mcp
-      {0, 0, rc_}},            // pip/dip
-    St_  {{-r11_, -r3_, r1_},      // splay joint
-      {0, r7_, r5_},            // mcp joint
-      {0, 0, r9_}},              // pip/dip joint
-    slist_ {arma::vec6({0, 0, 1, 0, 0, 0}),
-      arma::vec6({-1, 0, 0, 0, 0, 0.01776}),
-      arma::vec6({-1, 0, 0, 0, 0, 0.07776}),
-      arma::vec6({-1, 0, 0, 0, 0, 0.11836})},
-    joint_min_ {-0.55, -0.2, -0.01},
-    joint_max_ {0.55, 1.572, 1.572},
-    M_ {{1, 0, 0, 0},
-        {0, 1, 0, 0.15},
-        {0, 0, 1, 0},
-        {0, 0, 0, 1}},
-    four_bar_lengths_ {8.83765 * 0.001,
-      40.6 * 0.001,
-      8.91536 * 0.001,
-      37.79903 * 0.001},
     msg_attempts_ (0),
     cmd_state_ (CmdState::BEGIN)
   {
@@ -103,6 +81,8 @@ public:
     auto param_desc3 = rcl_interfaces::msg::ParameterDescriptor{};
     param_desc3.description = "The relative height of the ground (should be negative).";
     declare_parameter("relative_gnd_height", -0.25, param_desc3);
+
+    declare_and_get_finger_params();
 
     // get parameters
     max_vel_ = get_parameter("max_velocity").as_double();
@@ -206,12 +186,18 @@ public:
             RCLCPP_INFO_STREAM(get_logger(),
             "waypoint 0: (" << goal->x.at(0) << ", " << goal->y.at(0) << ", " << goal->z.at(0) <<
               ")");
+
+            auto start = transforms_->end_effector_to_joint(waypoints_temp[0]);
+            RCLCPP_INFO_STREAM(get_logger(),
+            "waypoint 0 in joint space: (" << start(0) << ", " << start(1) << ", " << start(2) <<
+              ")");
             for(auto i = 1; i < goal->length; i++) {
               RCLCPP_INFO_STREAM(get_logger(),
               "waypoint " << i << ": (" << goal->x.at(i) << ", " << goal->y.at(i) << ", " <<
                 goal->z.at(i) << ")");
-              auto start = transforms_->end_effector_to_joint(waypoints_temp[i - 1]);
-              auto end = transforms_->end_effector_to_joint(waypoints_temp[i]);
+              auto point = transforms_->end_effector_to_joint(waypoints_temp[i]);
+              RCLCPP_INFO_STREAM(get_logger(),
+                "waypoint " << i << " in joint space: (" << point(0) << ", " << point(1) << ", " << point(2) << ")");
             }
           } catch (std::runtime_error & e) {
             RCLCPP_ERROR_STREAM(get_logger(),
@@ -444,15 +430,15 @@ public:
   }
 
 private:
-  const double ra_, rb_, rc_;
-  const double r1_, r3_, r5_, r7_, r9_, r11_;
-  const arma::mat Ra_;
-  const arma::mat St_;
-  const std::vector<arma::vec6> slist_;
-  const arma::vec joint_min_;
-  const arma::vec joint_max_;
-  const arma::mat44 M_;
-  const std::vector<double> four_bar_lengths_;
+  double ra_, rb_, rc_;
+  double r1_, r3_, r5_, r7_, r9_, r11_;
+  arma::mat Ra_;
+  arma::mat St_;
+  std::vector<arma::vec6> slist_;
+  arma::vec joint_min_;
+  arma::vec joint_max_;
+  arma::mat44 M_;
+  std::vector<double> four_bar_lengths_;
 
   int msg_attempts_;
 
@@ -489,6 +475,65 @@ private:
   double max_accel_;
   double gnd_height_;
   std::vector<arma::vec> q_motor_list_;
+
+
+  void declare_and_get_finger_params()
+  {
+    declare_parameter("ra", 0.0075);
+    declare_parameter("rb", 0.0025);
+    declare_parameter("rc", 0.0025);
+    declare_parameter("r1", 0.008);
+    declare_parameter("r3", 0.0045);
+    declare_parameter("r5", 0.008);
+    declare_parameter("r7", 0.0045);
+    declare_parameter("r9", 0.009);
+    declare_parameter("slist", std::vector<double>{
+        0, 0, 1, 0, 0, 0,
+        -1, 0, 0, 0, 0, 0.0178,
+        -1, 0, 0, 0, 0, 0.079,
+        -1, 0, 0, 0, 0, 0.1195});
+    declare_parameter("joint_min", std::vector<double>{-0.55, -0.2, -0.01});
+    declare_parameter("joint_max", std::vector<double>{0.55, 1.572, 1.572});
+    declare_parameter("M", std::vector<double>{
+        1, 0, 0, 0,
+        0, 1, 0, 0.16,
+        0, 0, 1, 0,
+        0, 0, 0, 1});
+    declare_parameter("four_bar_lengths", std::vector<double>{
+        8.83765e-3, 40.6e-3, 8.91536e-3, 37.79903e-3});
+
+    ra_ = get_parameter("ra").as_double();
+    rb_ = get_parameter("rb").as_double();
+    rc_ = get_parameter("rc").as_double();
+    r1_ = get_parameter("r1").as_double();
+    r3_ = get_parameter("r3").as_double();
+    r5_ = get_parameter("r5").as_double();
+    r7_ = get_parameter("r7").as_double();
+    r9_ = get_parameter("r9").as_double();
+    r11_ = ra_ * 3.5;
+    Ra_ = arma::diagmat(arma::vec3{ra_, rb_, rc_});
+    St_ = arma::mat{{-r11_, -r3_, r1_}, {0.0, r7_, r5_}, {0.0, 0.0, r9_}};
+
+    auto slist_flat = get_parameter("slist").as_double_array();
+    slist_ = {
+        arma::vec6(slist_flat.data()),
+        arma::vec6(slist_flat.data() + 6),
+        arma::vec6(slist_flat.data() + 12),
+        arma::vec6(slist_flat.data() + 18)};
+
+    auto jmin_flat = get_parameter("joint_min").as_double_array();
+    joint_min_ = arma::vec(jmin_flat);
+
+    auto jmax_flat = get_parameter("joint_max").as_double_array();
+    joint_max_ = arma::vec(jmax_flat);
+
+    auto M_flat = get_parameter("M").as_double_array();
+    M_ = arma::mat44(arma::mat(M_flat.data(), 4, 4).t());
+
+    auto fbl_flat = get_parameter("four_bar_lengths").as_double_array();
+    four_bar_lengths_ = std::vector<double>(fbl_flat.begin(), fbl_flat.end());
+  }
+
 
   template<typename ResultT, typename FutureT>
   void handle_service_response(
@@ -664,22 +709,6 @@ private:
           RCLCPP_INFO(get_logger(), "Received cartesian goal request with length %d and waypoints:",
           goal.length);
 
-          // check that waypoints are within the joint limits
-
-          RCLCPP_INFO_STREAM(get_logger(),
-          "waypoint 0: (" << goal.x.at(0) << ", " << goal.y.at(0) << ", " << goal.z.at(0) <<
-            ")");
-          for(auto i = 1; i < goal.length; i++) {
-            RCLCPP_INFO_STREAM(get_logger(),
-            "waypoint " << i << ": (" << goal.x.at(i) << ", " << goal.y.at(i) << ", " <<
-              goal.z.at(i) << ")");
-
-            // check that waypoints are within workspace
-            auto start = transforms_->end_effector_to_joint(waypoints_temp[i - 1]);
-            auto end = transforms_->end_effector_to_joint(waypoints_temp[i]);
-          }
-
-          // accept request
           return generator_->generate_cartesian(waypoints_temp, max_vel_, max_accel_);
 
         } else {
