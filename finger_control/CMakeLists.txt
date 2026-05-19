@@ -13,6 +13,7 @@ find_package(std_srvs REQUIRED)
 find_package(finger_interfaces REQUIRED)
 find_package(fingerlib REQUIRED)
 find_package(modern_robotics REQUIRED)
+find_package(Armadillo REQUIRED)
 
 # Create a library.
 add_library(finger_control
@@ -62,7 +63,7 @@ if(BUILD_TESTING)
 endif()
 
 install(
-  DIRECTORY launch
+  DIRECTORY launch config
   DESTINATION share/${PROJECT_NAME}
 )
 
