@@ -43,7 +43,7 @@ public:
   : FingerControlBase("finger_whackamole"),
     finger_state_ (FingerState::IDLE),
     goal_count_ (0),
-    thresh_ (0.01)
+    thresh_ (0.001)
   {
     // init tf2
     tf_buffer_ = std::make_unique<tf2_ros::Buffer>(get_clock());
@@ -57,6 +57,8 @@ public:
     goal_tf_.transform.translation.y = 0.0;
     goal_tf_.transform.translation.z = 0.0;
 
+    // send_linear_goal({0.0, 0.1, 0.1}, {0.0, 0.0, 0.0});
+
     // init frame names
     fromFrameRel_ = "base_frame";
     toFrameRel_ = "goal"; //_" + std::to_string(goal_count_);
@@ -68,10 +70,12 @@ public:
         switch (finger_state_) {
 
           case FingerState::IDLE:
+            RCLCPP_INFO_ONCE(get_logger(), "idle...");
+
             // listen for new goal positions
             try {
               goal_tf_ = tf_buffer_->lookupTransform(
-                toFrameRel_, fromFrameRel_,
+                fromFrameRel_, toFrameRel_,
                 tf2::TimePointZero);
               
               if (!similar_tfs(goal_tf_, prev_tf_)) {
@@ -81,19 +85,30 @@ public:
 
             } catch (const tf2::TransformException & ex) {
               RCLCPP_INFO_ONCE(get_logger(), "Could not transform %s to %s: %s",
-                toFrameRel_.c_str(), fromFrameRel_.c_str(), ex.what());
+                fromFrameRel_.c_str(), toFrameRel_.c_str(), ex.what());
               return;
             }
             break;
             
           case FingerState::MOVING:
+            RCLCPP_INFO_ONCE(get_logger(), "moving...");
             // convert to vector
-            std::vector<float> end   = {float(goal_tf_.transform.translation.x),
-                                        float(goal_tf_.transform.translation.y),
-                                        float(goal_tf_.transform.translation.z)};
+            std::vector<float> above_goal = {float(goal_tf_.transform.translation.x),
+                                               float(goal_tf_.transform.translation.y),
+                                               float(goal_tf_.transform.translation.z + 0.05f)};
+            std::vector<float> goal = {float(goal_tf_.transform.translation.x),
+                                       float(goal_tf_.transform.translation.y),
+                                       float(goal_tf_.transform.translation.z)};
 
-            send_cartesian_goal({end});
-            
+            // just the goal
+            send_cartesian_goal({goal});
+            send_linear_goal({0.1, 0.1, 0.1});
+
+            // send_cartesian_goal({above_goal});
+            // send_cartesian_goal({above_goal, goal});
+            // send_cartesian_goal({goal, above_goal});
+            // send_linear_goal({0.0, 0.0, 0.0});
+
             // increment the goal count we look for
             goal_count_++;
             toFrameRel_ = "goal"; //_" + std::to_string(goal_count_);

@@ -35,31 +35,14 @@ public:
   using Force = finger_interfaces::action::Force;
 
   explicit FingerControlBase(const std::string & node_name)
-  : Node(node_name),
-    ra_(0.0075), rb_(0.0025), rc_(0.0025),
-    r1_(0.008), r3_(0.0045), r5_(0.008), r7_(0.0045), r9_(0.009), r11_(ra_ * 3.5),
-    Ra_{{ra_, 0, 0},
-        {0, rb_, 0},
-        {0, 0, rc_}},
-    St_{{-r11_, -r3_, r1_},
-        {0, r7_, r5_},
-        {0, 0, r9_}},
-    slist_{arma::vec6({0, 0, 1, 0, 0, 0}),
-           arma::vec6({-1, 0, 0, 0, 0, 0.01776}),
-           arma::vec6({-1, 0, 0, 0, 0, 0.07776}),
-           arma::vec6({-1, 0, 0, 0, 0, 0.11836})},
-    joint_min_{-0.55, -0.2, -0.01},
-    joint_max_{0.55, 1.572, 1.572},
-    M_{{1, 0, 0, 0},
-       {0, 1, 0, 0.15},
-       {0, 0, 1, 0},
-       {0, 0, 0, 1}},
-    four_bar_lengths_{8.83765 * 0.001, 40.6 * 0.001, 8.91536 * 0.001, 37.79903 * 0.001}
+  : Node(node_name)
   {
     auto param_desc = rcl_interfaces::msg::ParameterDescriptor{};
     param_desc.description = "The relative height of the ground (should be negative).";
     declare_parameter("relative_gnd_height", -0.25, param_desc);
     gnd_height_ = get_parameter("relative_gnd_height").as_double();
+
+    declare_and_get_finger_params();
 
     transforms_ = std::make_shared<Transformer>(Ra_, St_, slist_, M_, four_bar_lengths_,
       joint_min_, joint_max_);
@@ -118,15 +101,15 @@ public:
   }
 
 protected:
-  const double ra_, rb_, rc_;
-  const double r1_, r3_, r5_, r7_, r9_, r11_;
-  const arma::mat Ra_;
-  const arma::mat St_;
-  const std::vector<arma::vec6> slist_;
-  const arma::vec joint_min_;
-  const arma::vec joint_max_;
-  const arma::mat44 M_;
-  const std::vector<double> four_bar_lengths_;
+  double ra_, rb_, rc_;
+  double r1_, r3_, r5_, r7_, r9_, r11_;
+  arma::mat Ra_;
+  arma::mat St_;
+  std::vector<arma::vec6> slist_;
+  arma::vec joint_min_;
+  arma::vec joint_max_;
+  arma::mat44 M_;
+  std::vector<double> four_bar_lengths_;
 
   double gnd_height_;
   std::shared_ptr<Transformer> transforms_;
@@ -139,9 +122,68 @@ protected:
   rclcpp::Subscription<finger_interfaces::msg::MotorFeedback>::SharedPtr motor_actual_feedback_sub_;
   finger_interfaces::msg::MotorFeedback motor_actual_feedback_;
 
+  void declare_and_get_finger_params()
+  {
+        declare_parameter("ra", 0.0075);
+    declare_parameter("rb", 0.0025);
+    declare_parameter("rc", 0.0025);
+    declare_parameter("r1", 0.008);
+    declare_parameter("r3", 0.0045);
+    declare_parameter("r5", 0.008);
+    declare_parameter("r7", 0.0045);
+    declare_parameter("r9", 0.009);
+    declare_parameter("slist", std::vector<double>{
+        0, 0, 1, 0, 0, 0,
+        -1, 0, 0, 0, 0, 0.0178,
+        -1, 0, 0, 0, 0, 0.079,
+        -1, 0, 0, 0, 0, 0.1195});
+    declare_parameter("joint_min", std::vector<double>{-0.55, -0.2, -0.01});
+    declare_parameter("joint_max", std::vector<double>{0.55, 1.572, 1.572});
+    declare_parameter("M", std::vector<double>{
+        1, 0, 0, 0,
+        0, 1, 0, 0.16,
+        0, 0, 1, 0,
+        0, 0, 0, 1});
+    declare_parameter("four_bar_lengths", std::vector<double>{
+        8.83765e-3, 40.6e-3, 8.91536e-3, 37.79903e-3});
+
+    ra_ = get_parameter("ra").as_double();
+    rb_ = get_parameter("rb").as_double();
+    rc_ = get_parameter("rc").as_double();
+    r1_ = get_parameter("r1").as_double();
+    r3_ = get_parameter("r3").as_double();
+    r5_ = get_parameter("r5").as_double();
+    r7_ = get_parameter("r7").as_double();
+    r9_ = get_parameter("r9").as_double();
+    r11_ = ra_ * 3.5;
+    Ra_ = arma::diagmat(arma::vec3{ra_, rb_, rc_});
+    St_ = arma::mat{{-r11_, -r3_, r1_}, {0.0, r7_, r5_}, {0.0, 0.0, r9_}};
+
+    auto slist_flat = get_parameter("slist").as_double_array();
+    slist_ = {
+        arma::vec6(slist_flat.data()),
+        arma::vec6(slist_flat.data() + 6),
+        arma::vec6(slist_flat.data() + 12),
+        arma::vec6(slist_flat.data() + 18)};
+
+    auto jmin_flat = get_parameter("joint_min").as_double_array();
+    joint_min_ = arma::vec(jmin_flat);
+
+    auto jmax_flat = get_parameter("joint_max").as_double_array();
+    joint_max_ = arma::vec(jmax_flat);
+
+    auto M_flat = get_parameter("M").as_double_array();
+    M_ = arma::mat44(arma::mat(M_flat.data(), 4, 4).t());
+
+    auto fbl_flat = get_parameter("four_bar_lengths").as_double_array();
+    four_bar_lengths_ = std::vector<double>(fbl_flat.begin(), fbl_flat.end());
+  }
+
   void send_cartesian_goal(std::vector<std::vector<float>> waypoints)
   {
     auto goal_msg = Cartesian::Goal();
+    
+    goal_msg.length = int(waypoints.size());
 
     // check if they provided more than just the end
     if (goal_msg.length > 1) {
@@ -149,23 +191,25 @@ protected:
         goal_msg.x.push_back(wp.at(0));
         goal_msg.y.push_back(wp.at(1));
         goal_msg.z.push_back(wp.at(2));
-        goal_msg.length = int(waypoints.size());
-
       }
     }
     else {
       // derive current position in cartesian coordinates
+
       arma::vec motor_pos = {
         motor_actual_feedback_.motor_positions.at(0),
         motor_actual_feedback_.motor_positions.at(1),
         motor_actual_feedback_.motor_positions.at(2)};
+
       arma::vec joint_pos = transforms_->motor_to_joint(motor_pos);
       arma::mat44 cartesian = transforms_->joint_to_end_effector(joint_pos);
-
+      RCLCPP_INFO_STREAM(get_logger(), "motor_pos: " << motor_pos.at(0) << " " << motor_pos.at(1) << " " << motor_pos.at(2));
+      RCLCPP_INFO_STREAM(get_logger(), "joint_pos: " << cartesian(0) << " " << cartesian(1) << " " << cartesian(2));
+      RCLCPP_INFO_STREAM(get_logger(), "generated point: " << cartesian(0, 3) << " " << cartesian(1, 3) << " " << cartesian(2, 3));
       // add the current position in cartesian coordinates
-      goal_msg.x.push_back(cartesian(0));
-      goal_msg.y.push_back(cartesian(1));
-      goal_msg.z.push_back(cartesian(2));
+      goal_msg.x.push_back(cartesian(0, 3));
+      goal_msg.y.push_back(cartesian(1, 3));
+      goal_msg.z.push_back(cartesian(2, 3));
 
       // then add the last point
       for (auto & wp : waypoints) {
@@ -208,30 +252,13 @@ protected:
       };
 
     auto goal_handle_future = cartesian_client_->async_send_goal(goal_msg, send_goal_options);
-    goal_handle_future.wait();  // blocks this thread only
+    spin_until_complete(goal_handle_future);
     auto goal_handle = goal_handle_future.get();
-    if (!goal_handle) {           // <-- this check is missing 
+    if (!goal_handle) {
       RCLCPP_INFO(get_logger(), "Goal rejected"); return;
     }
     auto result_future = cartesian_client_->async_get_result(goal_handle);
-    result_future.wait();       // blocks this thread only
-
-    // auto goal_handle_future = cartesian_client_->async_send_goal(goal_msg, send_goal_options);
-    // if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), goal_handle_future) !=
-    //   rclcpp::FutureReturnCode::SUCCESS)
-    // {
-    //   RCLCPP_ERROR(get_logger(), "Failed to send goal"); return;
-    // }
-    // auto goal_handle = goal_handle_future.get();
-    // if (!goal_handle) {
-    //   RCLCPP_ERROR(get_logger(), "Goal rejected"); return;
-    // }
-    // auto result_future = cartesian_client_->async_get_result(goal_handle);
-    // if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), result_future) !=
-    //   rclcpp::FutureReturnCode::SUCCESS)
-    // {
-    //   RCLCPP_ERROR(get_logger(), "Failed to get result"); return;
-    // }
+    spin_until_complete(result_future);
     RCLCPP_INFO(get_logger(), "Goal completed");
   }
 
@@ -274,21 +301,13 @@ protected:
       };
 
     auto goal_handle_future = sinusoidal_client_->async_send_goal(goal_msg, send_goal_options);
-    if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), goal_handle_future) !=
-      rclcpp::FutureReturnCode::SUCCESS)
-    {
-      RCLCPP_ERROR(get_logger(), "Failed to send goal"); return;
-    }
+    spin_until_complete(goal_handle_future);
     auto goal_handle = goal_handle_future.get();
     if (!goal_handle) {
-      RCLCPP_ERROR(get_logger(), "Goal rejected"); return;
+      RCLCPP_INFO(get_logger(), "Goal rejected"); return;
     }
     auto result_future = sinusoidal_client_->async_get_result(goal_handle);
-    if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), result_future) !=
-      rclcpp::FutureReturnCode::SUCCESS)
-    {
-      RCLCPP_ERROR(get_logger(), "Failed to get result"); return;
-    }
+    spin_until_complete(result_future);
     RCLCPP_INFO(get_logger(), "Goal completed");
   }
 
@@ -312,6 +331,7 @@ protected:
     RCLCPP_INFO(get_logger(), "Sending goal");
 
     auto send_goal_options = rclcpp_action::Client<Linear>::SendGoalOptions();
+    
     send_goal_options.goal_response_callback =
       [this](const GoalHandleLinear::SharedPtr & goal_handle) {
         if (!goal_handle) {
@@ -338,22 +358,15 @@ protected:
         RCLCPP_INFO_STREAM(get_logger(), "result code: " << result.result.get()->success);
       };
 
+
     auto goal_handle_future = linear_client_->async_send_goal(goal_msg, send_goal_options);
-    if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), goal_handle_future) !=
-      rclcpp::FutureReturnCode::SUCCESS)
-    {
-      RCLCPP_ERROR(get_logger(), "Failed to send goal"); return;
-    }
+    spin_until_complete(goal_handle_future);
     auto goal_handle = goal_handle_future.get();
     if (!goal_handle) {
-      RCLCPP_ERROR(get_logger(), "Goal rejected"); return;
+      RCLCPP_INFO(get_logger(), "Goal rejected"); return;
     }
     auto result_future = linear_client_->async_get_result(goal_handle);
-    if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), result_future) !=
-      rclcpp::FutureReturnCode::SUCCESS)
-    {
-      RCLCPP_ERROR(get_logger(), "Failed to get result"); return;
-    }
+    spin_until_complete(result_future);
     RCLCPP_INFO(get_logger(), "Goal completed");
   }
 
@@ -401,25 +414,31 @@ protected:
       };
 
     auto goal_handle_future = force_step_client_->async_send_goal(goal_msg, send_goal_options);
-    if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), goal_handle_future) !=
-      rclcpp::FutureReturnCode::SUCCESS)
-    {
-      RCLCPP_ERROR(get_logger(), "Failed to send goal"); return;
-    }
+    spin_until_complete(goal_handle_future);
     auto goal_handle = goal_handle_future.get();
     if (!goal_handle) {
-      RCLCPP_ERROR(get_logger(), "Goal rejected"); return;
+      RCLCPP_INFO(get_logger(), "Goal rejected"); return;
     }
     auto result_future = force_step_client_->async_get_result(goal_handle);
-    if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), result_future) !=
-      rclcpp::FutureReturnCode::SUCCESS)
-    {
-      RCLCPP_ERROR(get_logger(), "Failed to get result"); return;
-    }
+    spin_until_complete(result_future);
     RCLCPP_INFO(get_logger(), "Goal completed");
   }
 
 private:
+  template<typename FutureT>
+  void spin_until_complete(FutureT & future)
+  {
+    rclcpp::executors::SingleThreadedExecutor exec;
+    try {
+      exec.add_node(get_node_base_interface());
+      exec.spin_until_future_complete(future);
+    } catch (const std::runtime_error &) {
+      // Node is already owned by a running executor (e.g. MultiThreadedExecutor in main).
+      // That executor's other threads will deliver callbacks — just block on the future directly.
+      future.wait();
+    }
+  }
+
   void wait_for_drake_heartbeat()
   {
     auto heartbeat_client = create_client<std_srvs::srv::Empty>("/heartbeat", 10);

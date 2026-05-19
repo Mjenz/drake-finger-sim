@@ -11,7 +11,7 @@
 
   <arg name="demo" default="none" description="Select the demo to run.">
     <choice value="force_step" />
-    <choice value="sinusoid" />
+    <choice value="sinusoidal" />
     <choice value="linear" />
     <choice value="ik" />
     <choice value="cartesian_ik" />

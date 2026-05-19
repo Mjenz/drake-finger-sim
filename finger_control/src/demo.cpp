@@ -46,7 +46,7 @@ public:
       }
     }
 
-    else if (demo =="sinusoid") {
+    else if (demo =="sinusoidal") {
       RCLCPP_INFO(get_logger(), "Running sinusoidal movement demo...");
       send_sinusoid_goal(1, 0, 0.1, 1.0, 0.0);
     }
