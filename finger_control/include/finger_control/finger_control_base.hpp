@@ -142,12 +142,41 @@ protected:
   void send_cartesian_goal(std::vector<std::vector<float>> waypoints)
   {
     auto goal_msg = Cartesian::Goal();
-    goal_msg.length = int(waypoints.size());
-    for (auto & wp : waypoints) {
-      goal_msg.x.push_back(wp.at(0));
-      goal_msg.y.push_back(wp.at(1));
-      goal_msg.z.push_back(wp.at(2));
+
+    // check if they provided more than just the end
+    if (goal_msg.length > 1) {
+      for (auto & wp : waypoints) {
+        goal_msg.x.push_back(wp.at(0));
+        goal_msg.y.push_back(wp.at(1));
+        goal_msg.z.push_back(wp.at(2));
+        goal_msg.length = int(waypoints.size());
+
+      }
     }
+    else {
+      // derive current position in cartesian coordinates
+      arma::vec motor_pos = {
+        motor_actual_feedback_.motor_positions.at(0),
+        motor_actual_feedback_.motor_positions.at(1),
+        motor_actual_feedback_.motor_positions.at(2)};
+      arma::vec joint_pos = transforms_->motor_to_joint(motor_pos);
+      arma::mat44 cartesian = transforms_->joint_to_end_effector(joint_pos);
+
+      // add the current position in cartesian coordinates
+      goal_msg.x.push_back(cartesian(0));
+      goal_msg.y.push_back(cartesian(1));
+      goal_msg.z.push_back(cartesian(2));
+
+      // then add the last point
+      for (auto & wp : waypoints) {
+        goal_msg.x.push_back(wp.at(0));
+        goal_msg.y.push_back(wp.at(1));
+        goal_msg.z.push_back(wp.at(2));
+      }
+
+      goal_msg.length = int(waypoints.size() + 1);
+
+    }    
 
     RCLCPP_INFO(get_logger(), "Sending goal");
 
@@ -179,21 +208,30 @@ protected:
       };
 
     auto goal_handle_future = cartesian_client_->async_send_goal(goal_msg, send_goal_options);
-    if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), goal_handle_future) !=
-      rclcpp::FutureReturnCode::SUCCESS)
-    {
-      RCLCPP_ERROR(get_logger(), "Failed to send goal"); return;
-    }
+    goal_handle_future.wait();  // blocks this thread only
     auto goal_handle = goal_handle_future.get();
-    if (!goal_handle) {
-      RCLCPP_ERROR(get_logger(), "Goal rejected"); return;
+    if (!goal_handle) {           // <-- this check is missing 
+      RCLCPP_INFO(get_logger(), "Goal rejected"); return;
     }
     auto result_future = cartesian_client_->async_get_result(goal_handle);
-    if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), result_future) !=
-      rclcpp::FutureReturnCode::SUCCESS)
-    {
-      RCLCPP_ERROR(get_logger(), "Failed to get result"); return;
-    }
+    result_future.wait();       // blocks this thread only
+
+    // auto goal_handle_future = cartesian_client_->async_send_goal(goal_msg, send_goal_options);
+    // if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), goal_handle_future) !=
+    //   rclcpp::FutureReturnCode::SUCCESS)
+    // {
+    //   RCLCPP_ERROR(get_logger(), "Failed to send goal"); return;
+    // }
+    // auto goal_handle = goal_handle_future.get();
+    // if (!goal_handle) {
+    //   RCLCPP_ERROR(get_logger(), "Goal rejected"); return;
+    // }
+    // auto result_future = cartesian_client_->async_get_result(goal_handle);
+    // if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), result_future) !=
+    //   rclcpp::FutureReturnCode::SUCCESS)
+    // {
+    //   RCLCPP_ERROR(get_logger(), "Failed to get result"); return;
+    // }
     RCLCPP_INFO(get_logger(), "Goal completed");
   }
 

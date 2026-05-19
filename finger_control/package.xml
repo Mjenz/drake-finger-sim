@@ -18,7 +18,10 @@
   <depend>std_srvs</depend>
   <depend>finger_interfaces</depend>
   <depend>fingerlib</depend>
-  
+  <depend>tf2_ros</depend>
+  <depend>tf2</depend>
+  <depend>geometry_msgs</depend>
+
   <export>
     <build_type>ament_cmake</build_type>
   </export>

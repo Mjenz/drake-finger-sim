@@ -14,6 +14,9 @@ find_package(finger_interfaces REQUIRED)
 find_package(fingerlib REQUIRED)
 find_package(modern_robotics REQUIRED)
 find_package(Armadillo REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(geometry_msgs REQUIRED)
 
 # Create a library.
 add_library(finger_control
@@ -49,6 +52,9 @@ add_executable(control src/whackamole.cpp)
 
 target_link_libraries(control
   finger_control
+  ${tf2_ros_TARGETS}
+  ${tf2_TARGETS}
+  ${geometry_msgs_TARGETS}
 )
 
 target_link_libraries(demo

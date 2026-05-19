@@ -18,43 +18,139 @@
 
 #include "finger_control/finger_control_base.hpp"
 
+#include "geometry_msgs/msg/transform_stamped.hpp"
+#include "tf2/exceptions.hpp"
+#include "tf2_ros/transform_listener.h"
+#include "tf2_ros/buffer.h"
+
 using namespace std::chrono_literals;
 
+
+/// \brief State variable for moving to published goal points
+enum FingerState
+{
+  MOVING,
+  IDLE,
+};
+
 /// \brief A class that bridges commands and feedback between ros and drake
-class FingerControl : public FingerControlBase
+class FingerWhackamole : public FingerControlBase
 {
 public:
 
-  /// \brief Create an instance of FingerControl running the whackamole demo
-  FingerControl()
-  : FingerControlBase("finger_control")
+  /// \brief Create an instance of FingerWhackamole running the whackamole demo
+  FingerWhackamole()
+  : FingerControlBase("finger_whackamole"),
+    finger_state_ (FingerState::IDLE),
+    goal_count_ (0),
+    thresh_ (0.01)
   {
+    // init tf2
+    tf_buffer_ = std::make_unique<tf2_ros::Buffer>(get_clock());
+    tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+
+    // init tfs
+    prev_tf_.transform.translation.x = 0.0;
+    prev_tf_.transform.translation.y = 0.0;
+    prev_tf_.transform.translation.z = 0.0;
+    goal_tf_.transform.translation.x = 0.0;
+    goal_tf_.transform.translation.y = 0.0;
+    goal_tf_.transform.translation.z = 0.0;
+
+    // init frame names
+    fromFrameRel_ = "base_frame";
+    toFrameRel_ = "goal"; //_" + std::to_string(goal_count_);
+
     // define timer callback and init
     auto hyper_alg_timer_cb =
       [this]() -> void {
 
-        RCLCPP_INFO_ONCE(get_logger(), "idle ...");
-        // get tfs
+        switch (finger_state_) {
 
-        // check if there is a target tf
+          case FingerState::IDLE:
+            // listen for new goal positions
+            try {
+              goal_tf_ = tf_buffer_->lookupTransform(
+                toFrameRel_, fromFrameRel_,
+                tf2::TimePointZero);
+              
+              if (!similar_tfs(goal_tf_, prev_tf_)) {
+                // if successful switch state and move finger to this location
+                finger_state_ = FingerState::MOVING;
+              }
 
+            } catch (const tf2::TransformException & ex) {
+              RCLCPP_INFO_ONCE(get_logger(), "Could not transform %s to %s: %s",
+                toFrameRel_.c_str(), fromFrameRel_.c_str(), ex.what());
+              return;
+            }
+            break;
+            
+          case FingerState::MOVING:
+            // convert to vector
+            std::vector<float> end   = {float(goal_tf_.transform.translation.x),
+                                        float(goal_tf_.transform.translation.y),
+                                        float(goal_tf_.transform.translation.z)};
 
-        
+            send_cartesian_goal({end});
+            
+            // increment the goal count we look for
+            goal_count_++;
+            toFrameRel_ = "goal"; //_" + std::to_string(goal_count_);
+
+            // update prev_tf
+            prev_tf_ = goal_tf_;
+
+            // update state
+            finger_state_ = FingerState::IDLE;
+
+            break;
+          }        
       };
-    timer_ = this->create_wall_timer(100ms, hyper_alg_timer_cb);
+      
+    timer_cb_group_ = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+    timer_ = create_wall_timer(100ms, hyper_alg_timer_cb, timer_cb_group_);
+
   
   }
 
 private:
-  rclcpp::TimerBase::SharedPtr timer_;
+  FingerState finger_state_;
+  int goal_count_;
+  float thresh_;
 
+  std::string fromFrameRel_;
+  std::string toFrameRel_;
+  geometry_msgs::msg::TransformStamped goal_tf_;
+  geometry_msgs::msg::TransformStamped prev_tf_;
+
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+  std::unique_ptr<tf2_ros::Buffer> tf_buffer_;
+  rclcpp::TimerBase::SharedPtr timer_;
+  rclcpp::CallbackGroup::SharedPtr timer_cb_group_;
+
+  bool similar_tfs(geometry_msgs::msg::TransformStamped tf1, geometry_msgs::msg::TransformStamped tf2) {
+
+    auto x_diff = fabs(tf1.transform.translation.x - tf2.transform.translation.x);
+    auto y_diff = fabs(tf1.transform.translation.y - tf2.transform.translation.y);
+    auto z_diff = fabs(tf1.transform.translation.z - tf2.transform.translation.z);
+
+    if ((x_diff > thresh_) && (y_diff > thresh_) && (z_diff > thresh_)) {
+      return false;
+    } else {
+      return true;
+    }
+  }
 
 };
 
 int main(int argc, char * argv[])
 {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<FingerControl>());
+  auto node = std::make_shared<FingerWhackamole>();
+  rclcpp::executors::MultiThreadedExecutor exec;
+  exec.add_node(node);
+  exec.spin();
   rclcpp::shutdown();
   return 0;
 }

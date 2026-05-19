@@ -22,13 +22,13 @@
 using namespace std::chrono_literals;
 
 /// \brief A class that bridges commands and feedback between ros and drake
-class FingerControl : public FingerControlBase
+class FingerDemo : public FingerControlBase
 {
 public:
 
-  /// \brief Create an instance of FingerControl for running demos
-  FingerControl()
-  : FingerControlBase("finger_control")
+  /// \brief Create an instance of FingerDemo for running demos
+  FingerDemo()
+  : FingerControlBase("finger_demo")
   {
     auto param_desc1 = rcl_interfaces::msg::ParameterDescriptor{};
     param_desc1.description = "The demo that should be run.";
@@ -105,7 +105,7 @@ private:
 int main(int argc, char * argv[])
 {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<FingerControl>());
+  rclcpp::spin(std::make_shared<FingerDemo>());
   rclcpp::shutdown();
   return 0;
 }
