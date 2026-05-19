@@ -44,28 +44,10 @@ public:
   : Node("fake_vision"),
     id_(0),
     has_marker_(false),
-    count_(0),
-    ra_(0.0075), rb_(0.0025), rc_(0.0025),
-    r1_(0.008), r3_(0.0045), r5_(0.008), r7_(0.0045), r9_(0.009), r11_(ra_ * 3.5),
-    Ra_{{ra_, 0, 0},
-        {0, rb_, 0},
-        {0, 0, rc_}},
-    St_{{-r11_, -r3_, r1_},
-        {0, r7_, r5_},
-        {0, 0, r9_}},
-    slist_{arma::vec6({0, 0, 1, 0, 0, 0}),
-           arma::vec6({-1, 0, 0, 0, 0, 0.01776}),
-           arma::vec6({-1, 0, 0, 0, 0, 0.07776}),
-           arma::vec6({-1, 0, 0, 0, 0, 0.11836})},
-    joint_min_{-0.55, -0.2, -0.01},
-    joint_max_{0.55, 1.572, 1.572},
-    M_{{1, 0, 0, 0},
-       {0, 1, 0, 0.15},
-       {0, 0, 1, 0},
-       {0, 0, 0, 1}},
-    four_bar_lengths_{8.83765 * 0.001, 40.6 * 0.001, 8.91536 * 0.001, 37.79903 * 0.001}
-
+    count_(0)
   {
+    declare_and_get_finger_params();
+    
     // create transformer
     transforms_ = std::make_shared<Transformer>(Ra_, St_, slist_, M_, four_bar_lengths_, joint_min_, joint_max_);
 
@@ -75,9 +57,9 @@ public:
     tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
 
     // init uniform distributions
-    splay_d_ = std::uniform_real_distribution<>(joint_min_.at(0), joint_max_.at(0));
-    mcpflex_d_ = std::uniform_real_distribution<>(joint_min_.at(1), joint_max_.at(1));
-    pipflex_d_ = std::uniform_real_distribution<>(joint_min_.at(2), joint_max_.at(2));
+    splay_d_ = std::uniform_real_distribution<>(joint_min_.at(0) + 0.1, joint_max_.at(0) - 0.1);
+    mcpflex_d_ = std::uniform_real_distribution<>(joint_min_.at(1) + 0.1, joint_max_.at(1) - 0.1);
+    pipflex_d_ = std::uniform_real_distribution<>(joint_min_.at(2) + 0.1, joint_max_.at(2) - 0.1);
     norm_count_d_ = std::normal_distribution<>(50.0, 10.0);
 
     // init max count
@@ -163,16 +145,75 @@ private:
   int count_;
   int max_count_;
 
-  const double ra_, rb_, rc_;
-  const double r1_, r3_, r5_, r7_, r9_, r11_;
-  const arma::mat Ra_;
-  const arma::mat St_;
-  const std::vector<arma::vec6> slist_;
-  const arma::vec joint_min_;
-  const arma::vec joint_max_;
-  const arma::mat44 M_;
-  const std::vector<double> four_bar_lengths_;
+  double ra_, rb_, rc_;
+  double r1_, r3_, r5_, r7_, r9_, r11_;
+  arma::mat Ra_;
+  arma::mat St_;
+  std::vector<arma::vec6> slist_;
+  arma::vec joint_min_;
+  arma::vec joint_max_;
+  arma::mat44 M_;
+  std::vector<double> four_bar_lengths_;
   std::shared_ptr<Transformer> transforms_;
+
+
+  void declare_and_get_finger_params()
+  {
+    declare_parameter("ra", 0.0075);
+    declare_parameter("rb", 0.0025);
+    declare_parameter("rc", 0.0025);
+    declare_parameter("r1", 0.008);
+    declare_parameter("r3", 0.0045);
+    declare_parameter("r5", 0.008);
+    declare_parameter("r7", 0.0045);
+    declare_parameter("r9", 0.009);
+    declare_parameter("slist", std::vector<double>{
+        0, 0, 1, 0, 0, 0,
+        -1, 0, 0, 0, 0, 0.0178,
+        -1, 0, 0, 0, 0, 0.079,
+        -1, 0, 0, 0, 0, 0.1195});
+    declare_parameter("joint_min", std::vector<double>{-0.55, -0.2, -0.01});
+    declare_parameter("joint_max", std::vector<double>{0.55, 1.572, 1.572});
+    declare_parameter("M", std::vector<double>{
+        1, 0, 0, 0,
+        0, 1, 0, 0.16,
+        0, 0, 1, 0,
+        0, 0, 0, 1});
+    declare_parameter("four_bar_lengths", std::vector<double>{
+        8.83765e-3, 40.6e-3, 8.91536e-3, 37.79903e-3});
+
+    ra_ = get_parameter("ra").as_double();
+    rb_ = get_parameter("rb").as_double();
+    rc_ = get_parameter("rc").as_double();
+    r1_ = get_parameter("r1").as_double();
+    r3_ = get_parameter("r3").as_double();
+    r5_ = get_parameter("r5").as_double();
+    r7_ = get_parameter("r7").as_double();
+    r9_ = get_parameter("r9").as_double();
+    r11_ = ra_ * 3.5;
+    Ra_ = arma::diagmat(arma::vec3{ra_, rb_, rc_});
+    St_ = arma::mat{{-r11_, -r3_, r1_}, {0.0, r7_, r5_}, {0.0, 0.0, r9_}};
+
+    auto slist_flat = get_parameter("slist").as_double_array();
+    slist_ = {
+        arma::vec6(slist_flat.data()),
+        arma::vec6(slist_flat.data() + 6),
+        arma::vec6(slist_flat.data() + 12),
+        arma::vec6(slist_flat.data() + 18)};
+
+    auto jmin_flat = get_parameter("joint_min").as_double_array();
+    joint_min_ = arma::vec(jmin_flat);
+
+    auto jmax_flat = get_parameter("joint_max").as_double_array();
+    joint_max_ = arma::vec(jmax_flat);
+
+    auto M_flat = get_parameter("M").as_double_array();
+    M_ = arma::mat44(arma::mat(M_flat.data(), 4, 4).t());
+
+    auto fbl_flat = get_parameter("four_bar_lengths").as_double_array();
+    four_bar_lengths_ = std::vector<double>(fbl_flat.begin(), fbl_flat.end());
+  }
+
 };
 
 int main(int argc, char * argv[])
