@@ -161,9 +161,6 @@
         <color rgba="0.5 0.6 0.8 0.35"/>
       </material>
     </visual>
-    <material name="setpoint_ghost">
-        <color rgba="0.5 0.6 0.8 0.35"/>
-      </material>
     <collision>
       <geometry>
         <mesh filename="package://finger_description/meshes/urdf/collision/col_distal_phalanx.obj"/>
