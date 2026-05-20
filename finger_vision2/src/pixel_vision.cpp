@@ -51,32 +51,37 @@ class PixelVision : public rclcpp::Node
 {
 public:
   PixelVision()
-  : Node("simulation_vision"),
+  : Node("pixel_vision"),
     id_(0),
     has_marker_(false),
     count_(0),
     target_state_ (TargetState::NONE)
   {
-    // create static transformer for phone transform
-    tf_static_broadcaster_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(this);
-    geometry_msgs::msg::TransformStamped phone_tf_;
+    // declare and get parameters
+    declare_parameter("tf.trans.x", 0.0);
+    declare_parameter("tf.trans.y", 0.0);
+    declare_parameter("tf.trans.z", 0.0);
+    declare_parameter("tf.rot.roll", 0.0);
+    declare_parameter("tf.rot.pitch", 0.0);
+    declare_parameter("tf.rot.yaw", 0.0);
+    declare_parameter("px_per_meter", 0.0);
 
     phone_tf_.header.stamp = now();
     phone_tf_.header.frame_id = "base_frame";
     phone_tf_.child_frame_id = "phone_frame";
-    phone_tf_.transform.translation.x = -0.035f;
-    phone_tf_.transform.translation.y = 0.170f;
-    phone_tf_.transform.translation.z = -0.18f;
+    phone_tf_.transform.translation.x = get_parameter("tf.trans.x").as_double();
+    phone_tf_.transform.translation.y = get_parameter("tf.trans.y").as_double();
+    phone_tf_.transform.translation.z = get_parameter("tf.trans.z").as_double();
     tf2::Quaternion q;
-    q.setRPY(
-      0.0,
-      3.14,
-      1.57);
+    q.setRPY(get_parameter("tf.rot.roll").as_double(), get_parameter("tf.rot.pitch").as_double(), get_parameter("tf.rot.yaw").as_double());
     phone_tf_.transform.rotation.x = q.x();
     phone_tf_.transform.rotation.y = q.y();
     phone_tf_.transform.rotation.z = q.z();
     phone_tf_.transform.rotation.w = q.w();
+    pixels_per_meter_ = get_parameter("px_per_meter").as_double();
 
+    // create static transformer for phone transform and publish
+    tf_static_broadcaster_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(this);
     tf_static_broadcaster_->sendTransform(phone_tf_);
 
     // create publishers
@@ -138,13 +143,10 @@ public:
 private:
   void updateMarker()
   {
-    // pixels per meter conversion
-    auto pixels_per_meter = 18110.2362205;
-
     // convert pixels to meters
-    auto x = target_.x / pixels_per_meter;
-    auto y = target_.y / pixels_per_meter;
-    auto size = target_.size / pixels_per_meter;
+    auto x = target_.x / pixels_per_meter_;
+    auto y = target_.y / pixels_per_meter_;
+    auto size = target_.size / pixels_per_meter_;
     goal_tf_.header.frame_id = "phone_frame";
     goal_tf_.child_frame_id = "goal";
     goal_tf_.transform.translation.x = x;
@@ -183,6 +185,9 @@ private:
   geometry_msgs::msg::TransformStamped goal_tf_;
   int count_;
   int max_count_;
+  geometry_msgs::msg::TransformStamped phone_tf_;
+  double pixels_per_meter_;
+
 
   whackamole_interfaces::msg::Point target_;
   TargetState target_state_;

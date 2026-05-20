@@ -57,7 +57,7 @@ public:
     goal_tf_.transform.translation.y = 0.0;
     goal_tf_.transform.translation.z = 0.0;
 
-    // send_linear_goal({0.0, 0.1, 0.1}, {0.0, 0.0, 0.0});
+    send_linear_goal({0.0, 0.1, 0.1});
 
     // init frame names
     fromFrameRel_ = "base_frame";
@@ -70,7 +70,6 @@ public:
         switch (finger_state_) {
 
           case FingerState::IDLE:
-            RCLCPP_INFO_ONCE(get_logger(), "idle...");
 
             // listen for new goal positions
             try {
@@ -91,27 +90,22 @@ public:
             break;
             
           case FingerState::MOVING:
-            RCLCPP_INFO_ONCE(get_logger(), "moving...");
             // convert to vector
             std::vector<float> above_goal = {float(goal_tf_.transform.translation.x),
                                                float(goal_tf_.transform.translation.y),
-                                               float(goal_tf_.transform.translation.z + 0.05f)};
+                                               float(goal_tf_.transform.translation.z + 0.01f)};
             std::vector<float> goal = {float(goal_tf_.transform.translation.x),
                                        float(goal_tf_.transform.translation.y),
                                        float(goal_tf_.transform.translation.z)};
 
             // just the goal
-            send_cartesian_goal({goal});
-            send_linear_goal({0.1, 0.1, 0.1});
+            // send_cartesian_goal({goal});
+            // send_linear_goal({0.1, 0.1, 0.1});
 
-            // send_cartesian_goal({above_goal});
-            // send_cartesian_goal({above_goal, goal});
-            // send_cartesian_goal({goal, above_goal});
-            // send_linear_goal({0.0, 0.0, 0.0});
-
-            // increment the goal count we look for
-            goal_count_++;
-            toFrameRel_ = "goal"; //_" + std::to_string(goal_count_);
+            send_cartesian_goal({above_goal});
+            send_cartesian_goal({above_goal, goal});
+            send_cartesian_goal({goal, above_goal});
+            // send_linear_goal({0.0, 0.1, 0.1});
 
             // update prev_tf
             prev_tf_ = goal_tf_;
@@ -150,7 +144,7 @@ private:
     auto y_diff = fabs(tf1.transform.translation.y - tf2.transform.translation.y);
     auto z_diff = fabs(tf1.transform.translation.z - tf2.transform.translation.z);
 
-    if ((x_diff > thresh_) && (y_diff > thresh_) && (z_diff > thresh_)) {
+    if ((x_diff > thresh_) || (y_diff > thresh_) || (z_diff > thresh_)) {
       return false;
     } else {
       return true;

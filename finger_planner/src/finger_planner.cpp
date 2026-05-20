@@ -479,14 +479,15 @@ private:
 
   void declare_and_get_finger_params()
   {
-    declare_parameter("ra", 0.0075);
-    declare_parameter("rb", 0.0025);
-    declare_parameter("rc", 0.0025);
-    declare_parameter("r1", 0.008);
-    declare_parameter("r3", 0.0045);
-    declare_parameter("r5", 0.008);
-    declare_parameter("r7", 0.0045);
-    declare_parameter("r9", 0.009);
+    declare_parameter("ra", 0.0);
+    declare_parameter("rb", 0.0);
+    declare_parameter("rc", 0.0);
+    declare_parameter("r1", 0.0);
+    declare_parameter("r3", 0.0);
+    declare_parameter("r5", 0.0);
+    declare_parameter("r7", 0.0);
+    declare_parameter("r9", 0.0);
+    declare_parameter("r11", 0.0);
     declare_parameter("slist", std::vector<double>{
         0, 0, 1, 0, 0, 0,
         -1, 0, 0, 0, 0, 0.0178,
@@ -510,9 +511,9 @@ private:
     r5_ = get_parameter("r5").as_double();
     r7_ = get_parameter("r7").as_double();
     r9_ = get_parameter("r9").as_double();
-    r11_ = ra_ * 3.5;
+    r11_ = get_parameter("r11").as_double();
     Ra_ = arma::diagmat(arma::vec3{ra_, rb_, rc_});
-    St_ = arma::mat{{-r11_, -r3_, r1_}, {0.0, r7_, r5_}, {0.0, 0.0, r9_}};
+    St_ = arma::mat{{r11_, r3_, r1_}, {0.0, r7_, r5_}, {0.0, 0.0, r9_}};
 
     auto slist_flat = get_parameter("slist").as_double_array();
     slist_ = {

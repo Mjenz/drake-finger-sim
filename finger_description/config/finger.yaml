@@ -6,12 +6,24 @@
     rc: 0.0025
 
     # Tendon moment arm radii (meters)
-    r1: 0.008
+    # r1: 0.008
+    # r3: -0.0045
+    # r5: 0.008
+    # r7: 0.0045
+    # r9: 0.009
+    # r11: -0.0075 * 3.5  # ra * Gear_ratio
+    
+    r1: -0.008
     r3: 0.0045
-    r5: 0.008
-    r7: 0.0045
-    r9: 0.009
-    # r11 is derived as ra * 3.5
+    r5: -0.008
+    r7: -0.0045
+    r9: -0.009
+    r11: -0.02625  # -ra * Gear_ratio
+
+    # these build the structure matrix, account for signs in this file!!!
+      # r11_ , r3_ , r1_ 
+      # 0.0  , r7_ , r5_ 
+      # 0.0  , 0.0 , r9_
 
     # Screw axes (space frame), row-major, 4 axes x 6 elements = 24 values
     slist: [
@@ -22,8 +34,8 @@
     ]
 
     # Joint limits (rad): [splay/MCP, MCP flex, PIP/DIP flex]
-    joint_min: [-0.55, -0.2,   -0.01]
-    joint_max: [ 0.55,  1.572,  1.572]
+    joint_min: [-0.56, -0.21,   -0.02]
+    joint_max: [ 0.56,  1.582,  1.582]
 
     # Home configuration M (SE3), row-major 4x4
     M: [

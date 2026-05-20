@@ -4,6 +4,11 @@
     <choice value="false" />
   </arg>
 
+  <arg name="bridge" default="simulation" description="Select bridge to deploy.">
+    <choice value="simulation" />
+    <choice value="hardware" />
+  </arg>
+
   <arg name="record" default="false" description="Enable the bagging of joint and motor position data.">
     <choice value="true" />
     <choice value="false" />
@@ -31,17 +36,21 @@
     <remap from="/scene_markers/collision" to="/setpoint/scene_markers/collision"/>
   </node>
 
-  <node pkg="finger_bridge" exec="hardware_bridge" output="screen"/>
+  <node pkg="finger_bridge" exec="simulation_bridge" output="screen" if="$(eval '\'$(var bridge)\'==\'simulation\'')"/>
+  <node pkg="finger_bridge" exec="hardware_bridge" output="screen" if="$(eval '\'$(var bridge)\'==\'hardware\'')"/>
 
   <node pkg="finger_planner" exec="finger_planner" output="screen">
+    <param from="$(find-pkg-share finger_description)/config/finger.yaml"/>
     <param from="$(find-pkg-share finger_planner)/config/movement_config.yaml"/>
   </node>
 
   <node pkg="finger_control" exec="demo" output="screen">
+      <param from="$(find-pkg-share finger_description)/config/finger.yaml"/>
       <param from="$(find-pkg-share finger_planner)/config/movement_config.yaml"/>
       <param name="demo" value="$(var demo)" />
   </node>
-  
+
   <node pkg="finger_recorder" exec="record" if="$(eval '\'$(var record)\'==\'true\'')" output="screen"/>
+
 
 </launch>

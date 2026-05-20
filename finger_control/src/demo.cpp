@@ -53,9 +53,15 @@ public:
 
     else if (demo =="ik") { 
       RCLCPP_INFO(get_logger(), "Running inverse kinematics demo...");   
-      std::vector<float> start = {0.05f, 0.1f, -0.1f};            
-      std::vector<float> end   = {-0.05f, 0.1f, -0.1f};
-                                                                  
+      std::vector<float> start = {0.05f, 0.08f, -0.1f};            
+      std::vector<float> end   = {-0.05f, 0.08f, -0.1f};
+
+      // move out of singularity
+      send_linear_goal({0.1, 0.1, 0.1});
+
+      // move to start
+      send_cartesian_goal({start});        
+                                           
       for (auto i = 0; i < 20; i++) {
           send_cartesian_goal({start, end});        
           send_cartesian_goal({end, start});

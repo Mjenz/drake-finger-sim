@@ -145,6 +145,8 @@ public:
     // init motor feedback as zeros
     actual_feedback_.motor_positions = std::vector<float>{0.0, 0.0, 0.0};
     setpoint_feedback_.motor_positions = std::vector<float>{0.0, 0.0, 0.0};
+    // actual_feedback_.motor_positions = std::vector<float>{-1.68f, -1.22, 0.896f};
+    // setpoint_feedback_.motor_positions = std::vector<float>{-1.68f, -1.22, 0.896f};
     activity_feedback_.active = 0.0;
 
     // define timer callback and init

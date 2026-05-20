@@ -25,10 +25,12 @@
   <node pkg="finger_bridge" exec="simulation_bridge" output="screen"/>
 
   <node pkg="finger_planner" exec="finger_planner" output="screen">
+    <param from="$(find-pkg-share finger_description)/config/finger.yaml"/>
     <param from="$(find-pkg-share finger_planner)/config/movement_config.yaml"/>
   </node>
 
   <node pkg="finger_control" exec="control" output="screen">
+      <param from="$(find-pkg-share finger_description)/config/finger.yaml"/>
       <param from="$(find-pkg-share finger_planner)/config/movement_config.yaml"/>
   </node>
 
@@ -37,6 +39,8 @@
   <node pkg="tf2_ros" exec="static_transform_publisher"
        args="--x 0 --y 0 --z 0.2 --qx 0 --qy 0 --qz 0 --qw 1 --frame-id world --child-frame-id base_frame" />
 
-  <node pkg="finger_vision2" exec="simulation_vision" output="screen"/>
+  <node pkg="finger_vision2" exec="simulation_vision" output="screen">
+    <param from="$(find-pkg-share finger_description)/config/finger.yaml"/>
+  </node>
 
 </launch>
