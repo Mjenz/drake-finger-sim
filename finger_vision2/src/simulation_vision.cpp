@@ -37,11 +37,11 @@ std::mt19937 & get_random()
 }
 
 /// \brief Publishes random points for the finger to go towards
-class FakeVision : public rclcpp::Node
+class SimulationVision : public rclcpp::Node
 {
 public:
-  FakeVision()
-  : Node("fake_vision"),
+  SimulationVision()
+  : Node("simulation_vision"),
     id_(0),
     has_marker_(false),
     count_(0)
@@ -91,7 +91,7 @@ public:
 
     timer_ = create_wall_timer(100ms, timer_callback);
 
-    RCLCPP_INFO(get_logger(), "fake_vision node started");
+    RCLCPP_INFO(get_logger(), "simulation_vision node started");
   }
 
 private:
@@ -219,7 +219,7 @@ private:
 int main(int argc, char * argv[])
 {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<FakeVision>());
+  rclcpp::spin(std::make_shared<SimulationVision>());
   rclcpp::shutdown();
   return 0;
 };

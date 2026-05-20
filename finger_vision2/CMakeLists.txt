@@ -14,13 +14,17 @@ find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
+find_package(tf2 REQUIRED)
 find_package(rcl_interfaces REQUIRED)
 find_package(Armadillo REQUIRED)
 find_package(fingerlib REQUIRED)
 find_package(modern_robotics REQUIRED)
+find_package(whackamole_interfaces REQUIRED)
+find_package(std_msgs REQUIRED)
 
 add_executable(vision src/vision.cpp)
-add_executable(fake_vision src/fake_vision.cpp)
+add_executable(simulation_vision src/simulation_vision.cpp)
+add_executable(pixel_vision src/pixel_vision.cpp)
 
 target_link_libraries(vision
   rclcpp::rclcpp
@@ -33,13 +37,25 @@ target_link_libraries(vision
   ${rcl_interfaces_TARGETS}
 )
 
-target_link_libraries(fake_vision
+target_link_libraries(simulation_vision
   rclcpp::rclcpp
   ${geometry_msgs_TARGETS}
   ${visualization_msgs_TARGETS}
   ${tf2_ros_TARGETS}
   ${ARMADILLO_LIBRARIES}
   fingerlib::fingerlib
+)
+
+target_link_libraries(pixel_vision
+  rclcpp::rclcpp
+  ${geometry_msgs_TARGETS}
+  ${visualization_msgs_TARGETS}
+  ${tf2_ros_TARGETS}
+  ${tf2_TARGETS}
+  ${ARMADILLO_LIBRARIES}
+  fingerlib::fingerlib
+  ${whackamole_interfaces_TARGETS}
+  ${std_msgs_TARGETS}
 )
 
 if(BUILD_TESTING)
@@ -55,7 +71,7 @@ if(BUILD_TESTING)
 endif()
 
 install(
-  TARGETS vision fake_vision
+  TARGETS vision simulation_vision pixel_vision
   DESTINATION lib/${PROJECT_NAME}
 )
 
