@@ -37,6 +37,8 @@
   <node pkg="tf2_ros" exec="static_transform_publisher"
        args="--x 0 --y 0 --z 0.2 --qx 0 --qy 0 --qz 0 --qw 1 --frame-id world --child-frame-id base_frame" />
 
-  <node pkg="finger_vision2" exec="simulation_vision" output="screen"/>
+  <node pkg="finger_vision2" exec="pixel_vision" output="screen"/>
+
+  <include file="$(find-pkg-share whackamole_server)/launch/whackmole.launch.xml"/>
 
 </launch>
