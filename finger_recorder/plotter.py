@@ -10,7 +10,7 @@ from rclpy.serialization import deserialize_message
 
 import rosbag2_py
 
-JOINT_LABELS = ['splay [rad]', 'mcp_flex [rad]', 'pip/dip_flex [rad]']
+JOINT_LABELS = ['splay [deg]', 'mcp_flex [deg]', 'pip/dip_flex [deg]']
 
 TOPICS = {
     'motor_pos_actual_feedback':   ('motor_pos', 'actual'),
@@ -27,8 +27,7 @@ data = {
 reader = rosbag2_py.SequentialReader()
 reader.open(
     rosbag2_py.StorageOptions(
-        uri='src/robotic-finger/finger_recorder/bags/\
-finger_bag_20260511_142701',
+        uri='src/robotic-finger/finger_recorder/may21-2026-position-test-results/test5',
         storage_id='mcap'),
     rosbag2_py.ConverterOptions('', ''))
 
@@ -54,7 +53,7 @@ for col, (group, title) in enumerate([('motor_pos', 'Motor Position'),
             filtered = [(t, v) for t, v in data[group][series_name]]
             ts, vals_raw = zip(*filtered)
             vals = np.array(vals_raw)
-            ax.plot(ts, vals[:, i], label=series_name, color=color,
+            ax.plot(ts, np.rad2deg(vals[:, i]), label=series_name, color=color,
                     linestyle='-' if series_name == 'actual' else '--')
         if col == 0:
             ax.set_ylabel(label)

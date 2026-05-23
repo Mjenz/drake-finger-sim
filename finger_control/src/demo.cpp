@@ -39,16 +39,23 @@ public:
       RCLCPP_INFO(get_logger(), "Running linear joint movement demo...");
 
       std::vector<float> start_joint_loc = {0.0, 0.0, 0.0};
-      std::vector<float> end_joint_loc = {0.0, 0.0, 1.256};
+      std::vector<float> end_joint_loc = {0.0, 1.57, 0.0};
       for (auto i = 0; i < 10; i++) {
         send_linear_goal(end_joint_loc, start_joint_loc);
+        rclcpp::sleep_for(3000ms);
         send_linear_goal(start_joint_loc, end_joint_loc);
+        rclcpp::sleep_for(3000ms);
+
       }
     }
 
     else if (demo =="sinusoidal") {
       RCLCPP_INFO(get_logger(), "Running sinusoidal movement demo...");
-      send_sinusoid_goal(1, 0, 0.1, 1.0, 0.0);
+      send_linear_goal({0.0, M_PI/4.0f, 0.0});
+      send_sinusoid_goal(1, 1, M_PI/4.0f, 1.0,  M_PI/4.0f);
+     
+      // send_linear_goal({0.0, 0.0,  M_PI/4.0f});
+      // send_sinusoid_goal(1, 2, M_PI/4.0f * 0.3f, 10.0,  M_PI/4.0f);
     }
 
     else if (demo =="ik") { 

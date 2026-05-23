@@ -61,7 +61,8 @@ public:
 
     // init frame names
     fromFrameRel_ = "base_frame";
-    toFrameRel_ = "goal"; //_" + std::to_string(goal_count_);
+    toFrameRel_ = "goal";
+    // toFrameRel_ = "phone_frame";
 
     // define timer callback and init
     auto hyper_alg_timer_cb =
@@ -93,19 +94,18 @@ public:
             // convert to vector
             std::vector<float> above_goal = {float(goal_tf_.transform.translation.x),
                                                float(goal_tf_.transform.translation.y),
-                                               float(goal_tf_.transform.translation.z + 0.01f)};
+                                               float(goal_tf_.transform.translation.z + 0.02f)};
             std::vector<float> goal = {float(goal_tf_.transform.translation.x),
                                        float(goal_tf_.transform.translation.y),
                                        float(goal_tf_.transform.translation.z)};
 
             // just the goal
             // send_cartesian_goal({goal});
-            // send_linear_goal({0.1, 0.1, 0.1});
-
+            send_linear_goal({0.0, 0.025, 1.25});
             send_cartesian_goal({above_goal});
             send_cartesian_goal({above_goal, goal});
             send_cartesian_goal({goal, above_goal});
-            // send_linear_goal({0.0, 0.1, 0.1});
+            send_linear_goal({0.0, 0.025, 1.25});
 
             // update prev_tf
             prev_tf_ = goal_tf_;

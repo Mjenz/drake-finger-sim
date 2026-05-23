@@ -49,6 +49,7 @@
   <node pkg="finger_vision2" exec="pixel_vision" output="screen">
       <param from="$(find-pkg-share finger_vision2)/config/phone_tf.yaml"/>
   </node>
+
   <include file="$(find-pkg-share whackamole_server)/launch/whackmole.launch.xml"/>
 
 </launch>

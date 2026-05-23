@@ -1,0 +1,43 @@
+motor gains
+
+PIPDIP/MCP
+Position:40
+V_Gain 0.25
+V_int: 0.333
+
+Splay Gains:
+Position: 40
+V_gain: 0.05
+V_int: 5
+
+position tests on tony's setup
+
+test1:
+    mcp
+    sinusoid 1 hz
+    v_offset Pi/4
+    amplitude Pi/4
+
+test2:
+    pipdip
+    sinusoid 1 hz
+    v_offset Pi/4
+    amplitude Pi/4
+    
+test3:
+    mcp
+    sinusoid 10 hz
+    v_offset Pi/4
+    amplitude Pi/4 * 0.3 (30% full range)
+
+test4:
+    pipdip
+    sinusoid 10 hz
+    v_offset Pi/4
+    amplitude Pi/4 * 0.3 (30% full range)
+
+test5:
+    mcp
+    sinusoid 1 hz
+    v_offset Pi/4
+    amplitude Pi/4

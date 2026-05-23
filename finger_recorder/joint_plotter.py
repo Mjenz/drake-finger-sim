@@ -19,7 +19,7 @@ data = {
 reader = rosbag2_py.SequentialReader()
 reader.open(
     rosbag2_py.StorageOptions(
-        uri='src/robotic-finger/finger_recorder/bags/finger_bag_20260511_140504',
+        uri='src/robotic-finger/finger_recorder/bags/position_test_1_mcp_sinusoid_1hz',
         storage_id='mcap'),
     rosbag2_py.ConverterOptions('', ''))
 
