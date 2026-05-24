@@ -39,8 +39,8 @@ class TendonFeedbackSystem(LeafSystem):
         # declare input and output ports with functions
         self.joint_state_input_port = self.DeclareVectorInputPort(
             'finger_state', nq + nv)
-        self.tendon_tension_input_port = self.DeclareVectorInputPort(
-            'tendon_tension', nu)
+        # self.tendon_tension_input_port = self.DeclareVectorInputPort(
+        #     'tendon_tension', nu)
         self.DeclareVectorOutputPort(
             'tendon_velocity', nu, self._tendon_vel)
         self.DeclareVectorOutputPort(

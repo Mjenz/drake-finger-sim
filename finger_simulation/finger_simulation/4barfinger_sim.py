@@ -54,8 +54,13 @@ from pydrake.math import RigidTransform, RollPitchYaw
 from pydrake.multibody.parsing import Parser
 from pydrake.multibody.plant import AddMultibodyPlant, MultibodyPlantConfig
 from pydrake.systems.analysis import Simulator
+from pydrake.systems.controllers import PidController
 from pydrake.systems.framework import DiagramBuilder, TriggerType
-from pydrake.systems.primitives import ConstantVectorSource
+from pydrake.systems.primitives import (
+    ConstantVectorSource,
+    Multiplexer,
+    StateInterpolatorWithDiscreteDerivative,
+)
 
 import rclpy
 
@@ -143,7 +148,7 @@ class FingerSimulation():
 
         # Weld the grass to the world so that it's fixed during the simulation.
         self.finger, = parser.AddModels(
-            url='package://finger_description/sdf/finger.sdf')
+            url='package://finger_description/sdf/finger2.sdf')
         self.plant.RenameModelInstance(
             model_instance=self.finger, name='speedster_finger')
         parser.AddModels(
@@ -243,10 +248,23 @@ class FingerSimulation():
             )
             simulator.AdvanceTo(next_time)
 
-            self.debug()
+            # self.debug()
 
     def debug(self):
         """Debug print messages."""
+        t = self.simulator_context.get_time()
+        if hasattr(self, 'pid_controller') and int(t * 10) % 10 == 0:
+            pid_ctx = self.diagram.GetSubsystemContext(
+                self.pid_controller, self.simulator_context)
+            ctrl = self.pid_controller.GetOutputPort('control').Eval(pid_ctx)
+            desired = self.pid_controller.GetInputPort(
+                'desired_state').Eval(pid_ctx)
+            estimated = self.pid_controller.GetInputPort(
+                'estimated_state').Eval(pid_ctx)
+            print(f't={t:.2f} | desired={np.round(desired[:3], 3)} '
+                  f'| estimated={np.round(estimated[:3], 3)} '
+                  f'| control={np.round(ctrl, 3)}')
+
         # nq = self.plant.num_positions(self.finger)
         # nv = self.plant.num_velocities(self.finger)
         # print(f'finger: nq={nq}, nv={nv}, state size={nq+nv}')
@@ -309,8 +327,55 @@ def main():
         MotorFeedbackSystem())
     drake2ros_system = fingersim.builder.AddSystem(Drake2Ros(node))
 
+    # PID controller in motor space
+    # kp/ki/kd are per-motor gains — tune these for your system
+    kp = np.array([1.0, 1.0, 1.0])
+    ki = np.array([0.0, 0.0, 0.0])
+    kd = np.array([0.1, 0.1, 0.1])
+    pid_controller = fingersim.builder.AddSystem(
+        PidController(kp=kp, ki=ki, kd=kd)
+    )
+    fingersim.pid_controller = pid_controller
+
+    # Differentiates incoming position setpoints to produce desired velocity
+    desired_state_interp = fingersim.builder.AddSystem(
+        StateInterpolatorWithDiscreteDerivative(
+            num_positions=3,
+            time_step=fingersim.dt,
+            suppress_initial_transient=True,
+        )
+    )
+
+    # Combines motor_position + motor_velocity into a single estimated_state
+    estimated_state_mux = fingersim.builder.AddSystem(Multiplexer([3, 3]))
+
+    # Desired state: Ros2Drake → interpolator → PID
     fingersim.builder.Connect(
-        ros2drake_system.GetOutputPort('motor_torque'),
+        ros2drake_system.GetOutputPort('motor_pos_setpoint'),
+        desired_state_interp.get_input_port(),
+    )
+    fingersim.builder.Connect(
+        desired_state_interp.get_output_port(),
+        pid_controller.GetInputPort('desired_state'),
+    )
+
+    # Estimated state: MotorFeedback → mux → PID
+    fingersim.builder.Connect(
+        motor_feedback_system.GetOutputPort('motor_position'),
+        estimated_state_mux.get_input_port(0),
+    )
+    fingersim.builder.Connect(
+        motor_feedback_system.GetOutputPort('motor_velocity'),
+        estimated_state_mux.get_input_port(1),
+    )
+    fingersim.builder.Connect(
+        estimated_state_mux.get_output_port(),
+        pid_controller.GetInputPort('estimated_state'),
+    )
+
+    # PID torque output drives the tendon pipeline
+    fingersim.builder.Connect(
+        pid_controller.GetOutputPort('control'),
         motor_torque_to_force_system.GetInputPort('motor_torque'),
     )
     fingersim.builder.Connect(
@@ -325,10 +390,10 @@ def main():
         fingersim.plant.get_state_output_port(fingersim.finger),
         tendon_feedback_system.GetInputPort('finger_state'),
     )
-    fingersim.builder.Connect(
-        motor_torque_to_force_system.GetOutputPort('tendon_tension'),
-        tendon_feedback_system.GetInputPort('tendon_tension'),
-    )
+    # fingersim.builder.Connect(
+    #     motor_torque_to_force_system.GetOutputPort('tendon_tension'),
+    #     tendon_feedback_system.GetInputPort('tendon_tension'),
+    # )
     fingersim.builder.Connect(
         tendon_feedback_system.GetOutputPort('tendon_velocity'),
         motor_feedback_system.GetInputPort('tendon_velocity'),
