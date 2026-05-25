@@ -31,12 +31,12 @@ public:
 /// \brief Convert joint angles to motor positions
 /// \param q_joint The joint angles (in radians)
 /// \return The motor positions corresponding to the given joint angles
-  arma::vec joint_to_motor(const arma::vec & q_joint);
+  arma::vec joint_to_motor(const arma::vec & q_joint, bool enforce_limits = true);
 
 /// \brief Convert motor positions to joint angles
 /// \param q_motor The motor positions
 /// \return The joint angles corresponding to the given motor positions
-  arma::vec motor_to_joint(const arma::vec & q_motor);
+  arma::vec motor_to_joint(const arma::vec & q_motor, bool enforce_limits = true);
 
   /// @brief Convert joint torques to motor torques
   /// @param t_joint The joint torques

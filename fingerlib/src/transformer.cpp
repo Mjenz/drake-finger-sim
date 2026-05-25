@@ -19,14 +19,16 @@ Transformer::Transformer(
 {
 }
 
-arma::vec Transformer::joint_to_motor(const arma::vec & q_joint)
+arma::vec Transformer::joint_to_motor(const arma::vec & q_joint, bool enforce_limits)
 {
-  bool inside =
-    arma::all(q_joint >= _joint_min) &&
-    arma::all(q_joint <= _joint_max);
+  if(enforce_limits){
+    bool inside =
+      arma::all(q_joint >= _joint_min) &&
+      arma::all(q_joint <= _joint_max);
 
-  if(!inside) {
-    throw std::runtime_error("Input outside of joint limits");
+    if(!inside) {
+      throw std::runtime_error("Input outside of joint limits");
+    }
   }
 
   arma::vec q_tendon = _structure.t() * q_joint;
@@ -34,18 +36,20 @@ arma::vec Transformer::joint_to_motor(const arma::vec & q_joint)
   return q_motor;
 }
 
-arma::vec Transformer::motor_to_joint(const arma::vec & q_motor)
+arma::vec Transformer::motor_to_joint(const arma::vec & q_motor, bool enforce_limits)
 {
   arma::vec q_tendon = _Ra * q_motor;
   arma::vec q_joint = _structure_inv.t() * q_tendon;
 
-  bool inside =
-    arma::all(q_joint >= _joint_min) &&
-    arma::all(q_joint <= _joint_max);
+  if(enforce_limits){
+    bool inside =
+      arma::all(q_joint >= _joint_min) &&
+      arma::all(q_joint <= _joint_max);
 
-  if(!inside) {
-    std::cout << q_joint << std::endl;
-    throw std::runtime_error("Output outside of joint limits");
+    if(!inside) {
+      std::cout << q_joint << std::endl;
+      throw std::runtime_error("Output outside of joint limits");
+    }
   }
 
   return q_joint;

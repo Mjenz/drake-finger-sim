@@ -73,6 +73,18 @@ TEST_CASE("Basic usage of JointTrajectory class", "[JointTrajectory]")
         REQUIRE_THAT(q_motor_list[0](0), Catch::Matchers::WithinAbs(q_motor_list.back()(0), 1e-3));
     }
 
+    SECTION("Chirp Motion")
+    {
+        auto q_motor_list = generator.generate_chirp(1, 0.2, 5.0, 10.0, 2.0, 0.8);
+        REQUIRE(q_motor_list.size() == 200);
+        REQUIRE_THAT(q_motor_list[0](0), Catch::Matchers::WithinAbs(q_motor_list.back()(0), 1e-3));
+
+        // for (auto q_motor: q_motor_list) {
+        //     auto q_joint = transforms.motor_to_joint(q_motor);
+        //     std::cout << "q_joint: " << q_joint.t() << std::endl;
+        // }
+    }
+
     SECTION("Linear Motion")
     {
         arma::vec start = {0, 0, 0};
@@ -148,5 +160,19 @@ TEST_CASE("Basic usage of JointTrajectory class", "[JointTrajectory]")
         // for(auto t_motor: t_motor_list){
         //     std::cout << t_motor << std::endl;
         // }
+    }
+
+        SECTION("Chirp Velocity")
+    {
+        auto q_motor_list = generator.generate_chirp_velocity(1, 0.2, 5.0, 10.0, 2.0, 0.8);
+        REQUIRE(q_motor_list.size() == 200);
+        REQUIRE_THAT(q_motor_list[0](0), Catch::Matchers::WithinAbs(q_motor_list.back()(0), 1e-3));
+
+        for (auto q_motor: q_motor_list) {
+            auto q_joint = transforms.motor_to_joint(q_motor);
+            std::cout << "q_joint: " << q_joint.t() << std::endl;
+        }
+
+        REQUIRE_THROWS(generator.generate_chirp_velocity(1, 100, 5.0, 10.0, 2.0, 0.8));
     }
 }

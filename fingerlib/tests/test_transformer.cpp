@@ -72,7 +72,7 @@ TEST_CASE("Basic usage of Transformer class", "[Transformer]")
         // calculate corresponding motor angles
         auto q_motor = transforms.joint_to_motor(q_joint);
 
-        std::cout << "q_motor" << q_motor << std::endl;
+        //std::cout << "q_motor" << q_motor << std::endl;
 
         REQUIRE_THAT(q_motor(0), Catch::Matchers::WithinAbs(0.35, 1e-12));
         REQUIRE_THAT(q_motor(1), Catch::Matchers::WithinAbs(-.18, 1e-12));
@@ -87,7 +87,7 @@ TEST_CASE("Basic usage of Transformer class", "[Transformer]")
         // calculate corresponding motor angles
         auto q_joint = transforms.motor_to_joint(q_motor);
 
-        std::cout << "q_joint" << q_joint << std::endl;
+        //std::cout << "q_joint" << q_joint << std::endl;
 
         REQUIRE_THAT(q_motor(0), Catch::Matchers::WithinAbs(0, 1e-12));
         REQUIRE_THAT(q_motor(1), Catch::Matchers::WithinAbs(0, 1e-12));
@@ -148,11 +148,11 @@ TEST_CASE("Basic usage of Transformer class", "[Transformer]")
 
         auto ee_pos = q_ee.submat(0, 3, 2, 3);
 
-        std::cout << ee_pos << std::endl;
+        //std::cout << ee_pos << std::endl;
 
         auto q_joint_ik = transforms.end_effector_to_joint(ee_pos);
 
-        std::cout << q_joint_ik << std::endl;
+        //std::cout << q_joint_ik << std::endl;
 
 
     }

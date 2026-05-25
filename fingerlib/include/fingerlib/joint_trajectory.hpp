@@ -22,6 +22,16 @@ public:
     /// \return A vector of motor positions corresponding to the generated sinusoidal trajectory
   std::vector<arma::vec> generate_sinusoid(int joint, double amp, double freq, double v_shift);
 
+    /// \brief Generate a chirp trajectory for a specified joint + parameters
+    /// \param joint - The index of the joint to generate the chirp for (0, 1, or 2)
+    /// \param amp - The amplitude of the chirp (in radians)
+    /// \param freq_1 - The initial frequency of the chirp (in Hz)
+    /// \param freq_2 - The final frequency of the chirp (in Hz)
+    /// \param time - The duration of the chirp (in seconds)
+    /// \param v_shift - The vertical shift of the chirp (in radians)
+    /// \return A vector of motor positions corresponding to the generated chirp trajectory
+  std::vector<arma::vec> generate_chirp(int joint, double amp, double freq_1, double freq_2, double time, double v_shift);
+
     /// \brief Generate a step trajectory for a specified joint + parameters
     /// \param joint - The index of the joint to generate the step for (0, 1, or 2)
     /// \param amp - The amplitude of the step (in radians)
@@ -61,6 +71,18 @@ public:
     const arma::vec & force_low, 
     const arma::vec & force_high, 
     double freq);
+
+    /// \brief Generate a chirp trajectory for a specified joint + parameters
+    /// \param joint - The index of the joint to generate the chirp for (0, 1, or 2)
+    /// \param amp - The amplitude of the chirp (in radians)
+    /// \param freq_1 - The initial frequency of the chirp (in Hz)
+    /// \param freq_2 - The final frequency of the chirp (in Hz)
+    /// \param time - The duration of the chirp (in seconds)
+    /// \param start_pos - The starting position of the chirp (in radians)
+    /// \return A vector of motor positions corresponding to the generated chirp trajectory
+  std::vector<arma::vec> generate_chirp_velocity(int joint, double amp, double freq_1, double freq_2, double time, double start_pos);
+
+
 
 private:
     /// \brief The transformer object for converting between joint and motor space

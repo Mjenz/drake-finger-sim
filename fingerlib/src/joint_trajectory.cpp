@@ -38,6 +38,35 @@ std::vector<arma::vec> JointTrajectory::generate_sinusoid(
   return q_motor_list;
 }
 
+std::vector<arma::vec> JointTrajectory::generate_chirp(
+  int joint, double amp, double freq_1, double freq_2, double time, double v_shift)
+{
+  int N = std::ceil((double)_sampling_rate * time);
+
+  std::vector<arma::vec> q_motor_list;
+  q_motor_list.reserve(N);
+
+  double c = (freq_2 - freq_1) / time;  // Chirp rate
+
+  for(double t = 0; t < time; t += 1.0 / _sampling_rate) {
+
+    double sine_value = amp * std::sin(2 * M_PI * (freq_1*t + c*t*t/2)) + v_shift;
+
+    arma::vec q_joint(3, arma::fill::zeros);
+
+    if(joint >= 0 && joint <= 2) {
+      q_joint(joint) = sine_value;
+    }
+
+    q_motor_list.push_back(_transforms.joint_to_motor(q_joint));
+  }
+
+    //std::cout << "Generated " << q_motor_list.size() << " motor positions." << std::endl;
+
+  return q_motor_list;
+}
+
+
 std::vector<arma::vec> JointTrajectory::generate_step(
   int joint, double amp, double freq,
   double v_shift)
@@ -140,12 +169,48 @@ std::vector<arma::vec> JointTrajectory::generate_force_step(
 
     t_motor_list.push_back(t_motor);
 
-    std::cout << "force_value: " << force_value.t() << std::endl;
-    std::cout << "t_joint: " << t_joint.t() << std::endl;
-    std::cout << "t_motor: " << t_motor_list.back().t() << std::endl;
+    // std::cout << "force_value: " << force_value.t() << std::endl;
+    // std::cout << "t_joint: " << t_joint.t() << std::endl;
+    // std::cout << "t_motor: " << t_motor_list.back().t() << std::endl;
   }
 
   return t_motor_list;
+}
+
+std::vector<arma::vec> JointTrajectory::generate_chirp_velocity(
+  int joint, double amp, double freq_1, double freq_2, double time, double start_pos)
+{
+  int N = std::ceil((double)_sampling_rate * time);
+
+  std::vector<arma::vec> q_motor_list;
+  q_motor_list.reserve(N);
+
+  double c = (freq_2 - freq_1) / time;  // Chirp rate
+  double joint_angle = start_pos;
+
+  for(double t = 0; t < time; t += 1.0 / _sampling_rate) {
+
+    double sine_value = amp * std::sin(2 * M_PI * (freq_1*t + c*t*t/2));
+
+    joint_angle += sine_value * (1.0/_sampling_rate);  // integrate velocity to get position
+
+    arma::vec q_joint(3, arma::fill::zeros);
+    arma::vec q_pos_test(3, arma::fill::zeros);
+
+    if(joint >= 0 && joint <= 2) {
+      q_joint(joint) = sine_value;
+      q_pos_test(joint) = joint_angle;
+    }
+
+    // test pos
+    _transforms.joint_to_motor(q_pos_test);
+
+    q_motor_list.push_back(_transforms.joint_to_motor(q_joint, false));
+  }
+
+    //std::cout << "Generated " << q_motor_list.size() << " motor positions." << std::endl;
+
+  return q_motor_list;
 }
 
 double JointTrajectory::TrapezoidalTimeScaling(
