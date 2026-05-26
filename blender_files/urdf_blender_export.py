@@ -4,8 +4,8 @@ import mathutils
 
 # ── Config ────────────────────────────────────────────────────────────────────
 
-MESHES_DIR    = "/home/michael-jenz/rds_ws/finger_vizualization/src/drake-finger-sim/finger_description/meshes/urdf"
-URDF_PATH     = "/home/michael-jenz/rds_ws/finger_vizualization/src/drake-finger-sim/finger_description/urdf/finger.urdf"
+MESHES_DIR    = "/home/michael-jenz/rds_ws/src/robotic-finger/finger_description/meshes/urdf"
+URDF_PATH     = "/home/michael-jenz/rds_ws/src/robotic-finger/finger_description/urdf_new/finger.urdf"
 VISUAL_DIR    = os.path.join(MESHES_DIR, "visual")
 COLLISION_DIR = os.path.join(MESHES_DIR, "collision")
 AXES_FILE     = os.path.join(MESHES_DIR, "joint_axes.yaml")
@@ -24,8 +24,8 @@ JOINTS = [
         "type":     "revolute",
         "parent":   "base_link",
         "child":    "mcp_link",
-        "lower":    -0.174533,
-        "upper":    0.174533,
+        "lower":    -0.55,
+        "upper":    0.55,
         "effort":   5.0,
         "velocity": 3.14,
         "damping":  0.1,
@@ -37,8 +37,8 @@ JOINTS = [
         "type":     "revolute",
         "parent":   "mcp_link",
         "child":    "proximal_phalanx",
-        "lower":    0,
-        "upper":    1.570,
+        "lower":    0.0,
+        "upper":    1.571,
         "effort":   5.0,
         "velocity": 3.14,
         "damping":  0.1,
@@ -51,7 +51,7 @@ JOINTS = [
         "parent":   "proximal_phalanx",
         "child":    "middle_phalanx",
         "lower":    0.0,
-        "upper":    1.570,
+        "upper":    1.571,
         "effort":   5.0,
         "velocity": 3.14,
         "damping":  0.1,
@@ -64,7 +64,7 @@ JOINTS = [
         "parent":   "middle_phalanx",
         "child":    "distal_phalanx",
         "lower":    0.0,
-        "upper":    1.570,
+        "upper":    1.571,
         "effort":   3.0,
         "velocity": 3.14,
         "damping":  0.1,

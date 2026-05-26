@@ -19,8 +19,8 @@ import bmesh
 
 # ── Config ─────────────────────────────────────────────────────────────────────
 
-MESHES_DIR    = "/home/michael-jenz/rds_ws/finger_vizualization/src/drake-finger-sim/finger_description/meshes/sdf"
-SDF_PATH      = "/home/michael-jenz/rds_ws/finger_vizualization/src/drake-finger-sim/finger_description/sdf/finger.sdf"
+MESHES_DIR    = "/home/michael-jenz/rds_ws/src/robotic-finger/finger_description/meshes/sdf"
+SDF_PATH      = "/home/michael-jenz/rds_ws/src/robotic-finger/finger_description/sdf_new/finger.sdf"
 VISUAL_DIR    = os.path.join(MESHES_DIR, "visual")
 COLLISION_DIR = os.path.join(MESHES_DIR, "collision")
 AXES_FILE     = os.path.join(MESHES_DIR, "joint_axes.yaml")
@@ -40,8 +40,8 @@ JOINTS = [
         "type":     "revolute",
         "parent":   "base_link",
         "child":    "mcp_link",
-        "lower":    -0.174533,
-        "upper":    0.174533,
+        "lower":    -0.55,
+        "upper":    0.55,
         "effort":   10000.0,
         "velocity": 10000.0,
         "damping":  DAMPING,
@@ -67,7 +67,7 @@ JOINTS = [
         "parent":   "proximal_phalanx",
         "child":    "middle_phalanx1",
         "lower":    0.0,
-        "upper":    1.570,
+        "upper":    1.571,
         "effort":   10000.0,
         "velocity": 10000.0,
         "damping":  DAMPING,
@@ -80,7 +80,7 @@ JOINTS = [
         "parent":   "proximal_phalanx",
         "child":    "middle_phalanx2",
         "lower":    0.0,
-        "upper":    1.570,
+        "upper":    1.571,
         "effort":   0.0,
         "velocity": 10000.0,
         "damping":  DAMPING,
@@ -93,7 +93,7 @@ JOINTS = [
         "parent":   "middle_phalanx1",
         "child":    "distal_phalanx",
         "lower":    0.0,
-        "upper":    1.570,
+        "upper":    1.571,
         "effort":   0.0,
         "velocity": 10000.0,
         "damping":  DAMPING,

@@ -34,8 +34,8 @@
     ]
 
     # Joint limits (rad): [splay/MCP, MCP flex, PIP/DIP flex]
-    joint_min: [-0.56, -0.21,   -0.02]
-    joint_max: [ 0.56,  1.582,  1.582]
+    joint_min: [-0.55, -0.0,   -0.0]
+    joint_max: [ 0.55,  1.572,  1.572]
 
     # Home configuration M (SE3), row-major 4x4
     M: [

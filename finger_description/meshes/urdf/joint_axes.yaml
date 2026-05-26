@@ -8,47 +8,47 @@ joints:
     origin:
       x: 0.0
       y: 0.0
-      z: -0.0
+      z: 0.0
     axis:
       x: 0.0
       y: 0.0
       z: 1.0
     urdf_snippets:
-      origin: '<origin xyz="0.0 0.0 -0.0" rpy="0 0 0"/>'
+      origin: '<origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>'
       axis:   '<axis xyz="0.0 0.0 1.0"/>'
   mcp_flexion:
     origin:
-      x: -0.0
+      x: 0.0
       y: 0.0178
-      z: 0.0
+      z: -0.0
     axis:
       x: -1.0
       y: 0.0
       z: 0.0
     urdf_snippets:
-      origin: '<origin xyz="-0.0 0.0178 0.0" rpy="0 0 0"/>'
+      origin: '<origin xyz="0.0 0.0178 -0.0" rpy="0 0 0"/>'
       axis:   '<axis xyz="-1.0 0.0 0.0"/>'
   pip_flexion:
     origin:
-      x: -0.0001
+      x: 0.0
       y: 0.0612
-      z: -0.0017
+      z: 0.0
     axis:
       x: -1.0
       y: 0.0
       z: 0.0
     urdf_snippets:
-      origin: '<origin xyz="-0.0001 0.0612 -0.0017" rpy="0 0 0"/>'
+      origin: '<origin xyz="0.0 0.0612 0.0" rpy="0 0 0"/>'
       axis:   '<axis xyz="-1.0 0.0 0.0"/>'
   dip_flexion:
     origin:
       x: 0.0036
-      y: 0.0405
-      z: -0.0023
+      y: 0.0406
+      z: 0.0
     axis:
       x: -1.0
       y: 0.0
       z: 0.0
     urdf_snippets:
-      origin: '<origin xyz="0.0036 0.0405 -0.0023" rpy="0 0 0"/>'
+      origin: '<origin xyz="0.0036 0.0406 0.0" rpy="0 0 0"/>'
       axis:   '<axis xyz="-1.0 0.0 0.0"/>'
