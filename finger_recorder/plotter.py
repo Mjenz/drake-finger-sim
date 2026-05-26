@@ -15,19 +15,23 @@ JOINT_LABELS = ['splay [deg]', 'mcp_flex [deg]', 'pip/dip_flex [deg]']
 TOPICS = {
     'motor_pos_actual_feedback':   ('motor_pos', 'actual'),
     'motor_pos_setpoint_feedback': ('motor_pos', 'setpoint'),
+    'motor_pos_drake_feedback': ('motor_pos', 'drake'),
     'actual/joint_feedback':       ('joint_angle', 'actual'),
     'setpoint/joint_feedback':     ('joint_angle', 'setpoint'),
+    'drake/joint_feedback':     ('joint_angle', 'drake'),
+    'joint_torque_drake_feedback':     ('joint_torque', 'drake'),
 }
 
 data = {
-    'motor_pos':   {'actual': [], 'setpoint': []},
-    'joint_angle': {'actual': [], 'setpoint': []},
+    'motor_pos':   {'actual': [], 'setpoint': [], 'drake': []},
+    'joint_angle': {'actual': [], 'setpoint': [], 'drake': []},
+    'joint_torque': {'drake': []},
 }
 
 reader = rosbag2_py.SequentialReader()
 reader.open(
     rosbag2_py.StorageOptions(
-        uri='src/robotic-finger/finger_recorder/may21-2026-position-test-results/test5',
+        uri='src/robotic-finger/finger_recorder/bags/finger_bag_20260525_192259',
         storage_id='mcap'),
     rosbag2_py.ConverterOptions('', ''))
 
@@ -40,21 +44,28 @@ while reader.has_next():
         if len(positions) == len(JOINT_LABELS):
             data[group][series].append((t / 1e9, positions))
 
-fig, axes = plt.subplots(len(JOINT_LABELS), 2, figsize=(14, 8), sharex=True)
+print("Data loaded:")
+for group, series_dict in data.items():
+    for series, values in series_dict.items():
+        print(f"  {group}/{series}: {len(values)} points")
+
+
+fig, axes = plt.subplots(len(JOINT_LABELS), 3, figsize=(14, 8), sharex=True)
 
 for col, (group, title) in enumerate([('motor_pos', 'Motor Position'),
-                                      ('joint_angle', 'Joint Angle')]):
+                                      ('joint_angle', 'Joint Angle'),
+                                      ('joint_torque', 'Joint Torque')]):
 
     for i, label in enumerate(JOINT_LABELS):
         ax = axes[i, col]
-        for series_name, color in [('actual', 'tab:blue'), ('setpoint', 'tab:orange')]:
-            if not data[group][series_name]:
+        for series_name, color in [('actual', 'tab:blue'), ('setpoint', 'tab:red'), ('drake', 'tab:green')]:
+            if not data[group].get(series_name):
                 continue
             filtered = [(t, v) for t, v in data[group][series_name]]
             ts, vals_raw = zip(*filtered)
             vals = np.array(vals_raw)
             ax.plot(ts, np.rad2deg(vals[:, i]), label=series_name, color=color,
-                    linestyle='-' if series_name == 'actual' else '--')
+                    linestyle='-' if (series_name == 'actual') else '--')
         if col == 0:
             ax.set_ylabel(label)
         ax.legend(loc='upper right')

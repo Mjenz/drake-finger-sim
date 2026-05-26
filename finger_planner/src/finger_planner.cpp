@@ -528,6 +528,12 @@ private:
     auto jmax_flat = get_parameter("joint_max").as_double_array();
     joint_max_ = arma::vec(jmax_flat);
 
+    // add a small buffer so that planning doesn't fail when the finger is at a joint limit
+    for (int i = 0; i < int(joint_max_.size()); i++) {
+      joint_min_(i) -= 0.02;
+      joint_max_(i) += 0.02;
+    }
+
     auto M_flat = get_parameter("M").as_double_array();
     M_ = arma::mat44(arma::mat(M_flat.data(), 4, 4).t());
 

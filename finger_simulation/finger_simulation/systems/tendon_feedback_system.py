@@ -13,7 +13,7 @@ class TendonFeedbackSystem(LeafSystem):
         super().__init__()
 
         # define structure matrix
-        ra = 0.0025  # splay motor shaft radius
+        ra = 0.0075  # splay motor shaft radius
 
         r11 = ra * 3.5
         r1 = 8 * 0.001

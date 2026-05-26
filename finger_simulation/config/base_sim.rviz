@@ -6,7 +6,6 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
-        - /visual1/Topic1
       Splitter Ratio: 0.5
     Tree Height: 866
   - Class: rviz_common/Selection
@@ -59,13 +58,25 @@ Visualization Manager:
           Value: true
         grasspatch/grasspatch_base_link:
           Value: true
+        setpoint_finger/base_link:
+          Value: true
+        setpoint_finger/distal_phalanx:
+          Value: true
+        setpoint_finger/mcp_link:
+          Value: true
+        setpoint_finger/middle_phalanx:
+          Value: true
+        setpoint_finger/proximal_phalanx:
+          Value: true
         speedster_finger/base_link:
           Value: true
         speedster_finger/distal_phalanx:
           Value: true
         speedster_finger/mcp_link:
           Value: true
-        speedster_finger/middle_phalanx:
+        speedster_finger/middle_phalanx1:
+          Value: true
+        speedster_finger/middle_phalanx2:
           Value: true
         speedster_finger/proximal_phalanx:
           Value: true
@@ -82,13 +93,25 @@ Visualization Manager:
             {}
           grasspatch/grasspatch_base_link:
             {}
+          setpoint_finger/base_link:
+            {}
+          setpoint_finger/distal_phalanx:
+            {}
+          setpoint_finger/mcp_link:
+            {}
+          setpoint_finger/middle_phalanx:
+            {}
+          setpoint_finger/proximal_phalanx:
+            {}
           speedster_finger/base_link:
             {}
           speedster_finger/distal_phalanx:
             {}
           speedster_finger/mcp_link:
             {}
-          speedster_finger/middle_phalanx:
+          speedster_finger/middle_phalanx1:
+            {}
+          speedster_finger/middle_phalanx2:
             {}
           speedster_finger/proximal_phalanx:
             {}
@@ -98,7 +121,7 @@ Visualization Manager:
       Enabled: true
       Name: visual_actual
       Namespaces:
-        plant: true
+        {}
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -117,6 +140,18 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /setpoint/scene_markers/visual
+      Value: true
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: true
+      Name: visual_drake
+      Namespaces:
+        plant: true
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /drake/scene_markers/visual
       Value: true
     - Class: rviz_default_plugins/MarkerArray
       Enabled: false
@@ -141,6 +176,18 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /setpoint/scene_markers/collision
+      Value: false
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: false
+      Name: collision_drake
+      Namespaces:
+        {}
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /drake/scene_markers/collision
       Value: false
   Enabled: true
   Global Options:
@@ -188,25 +235,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 1.4129424095153809
+      Distance: 1.2179189920425415
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -0.5731508135795593
-        Y: -0.10212128609418869
-        Z: -0.2837234139442444
+        X: -0.2215816080570221
+        Y: -0.3733615279197693
+        Z: -0.29118406772613525
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.5403982400894165
+      Pitch: 0.7303982377052307
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 0.2703985571861267
+      Yaw: 1.1453979015350342
     Saved: ~
 Window Geometry:
   Displays:

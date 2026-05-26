@@ -13,7 +13,7 @@ class MotorTorqueToForceSystem(LeafSystem):
         super().__init__()
 
         # define radii
-        ra, rb, rc = 0.0025, 0.0025, 0.0025
+        ra, rb, rc = 0.0075, 0.0025, 0.0025
 
         # define radius matrix
         self.Ra = np.array([[ra, 0, 0],
@@ -34,6 +34,7 @@ class MotorTorqueToForceSystem(LeafSystem):
     def _calc_force(self, context, output):
         """Convert motor torque to tendon forces."""
         torque = self.torque_input_port.Eval(context)
+        # torque[0] /= -3.5
         output.SetFromVector(self.Ra @ torque)
 
     def _calc_linear(self, context, output):

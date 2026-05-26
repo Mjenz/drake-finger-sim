@@ -13,7 +13,7 @@ class MotorFeedbackSystem(LeafSystem):
         super().__init__()
 
         # define radii
-        ra, rb, rc = 0.0025, 0.0025, 0.0025
+        ra, rb, rc = 0.0075, 0.0025, 0.0025
 
         # define radius matrix
         self.Ra = np.array([[ra, 0, 0],

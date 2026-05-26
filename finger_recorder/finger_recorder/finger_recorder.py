@@ -40,12 +40,18 @@ finger_bag_{datetime.now().strftime("%Y%m%d_%H%M%S")}',
                 'finger_interfaces/msg/MotorFeedback'),
             ('motor_pos_setpoint_feedback',
                 'finger_interfaces/msg/MotorFeedback'),
+            ('motor_pos_drake_feedback',
+                'finger_interfaces/msg/MotorFeedback'),
+            ('joint_torque_drake_feedback',
+                'finger_interfaces/msg/MotorFeedback'),
             ('motor_pos_activity_feedback',
                 'finger_interfaces/msg/MotorActivity'),
             ('setpoint/joint_feedback',
-                'finger_interfaces/msg/MotorActivity'),
+                'finger_interfaces/msg/MotorFeedback'),
             ('actual/joint_feedback',
-                'finger_interfaces/msg/MotorActivity'),
+                'finger_interfaces/msg/MotorFeedback'),
+            ('drake/joint_feedback',
+                'finger_interfaces/msg/MotorFeedback'),
         ]):
             self.writer.create_topic(rosbag2_py.TopicMetadata(
                 id=i, name=name, type=msg_type, serialization_format='cdr'))
@@ -56,6 +62,12 @@ finger_bag_{datetime.now().strftime("%Y%m%d_%H%M%S")}',
         self.create_subscription(MotorFeedback,
                                  'motor_pos_setpoint_feedback',
                                  self.setpoint_callback, 10)
+        self.create_subscription(MotorFeedback,
+                                 'motor_pos_drake_feedback',
+                                 self.drake_callback, 10)
+        self.create_subscription(MotorFeedback,
+                                 'joint_torque_drake_feedback',
+                                 self.drake_torque_callback, 10)
         self.create_subscription(MotorActivity,
                                  'motor_pos_activity_feedback',
                                  self.activity_callback, 10)
@@ -65,6 +77,9 @@ finger_bag_{datetime.now().strftime("%Y%m%d_%H%M%S")}',
         self.create_subscription(MotorFeedback,
                                  'actual/joint_feedback',
                                  self.actual_joint_callback, 10)
+        self.create_subscription(MotorFeedback,
+                                 'drake/joint_feedback',
+                                 self.drake_joint_callback, 10)
 
     def actual_callback(self, msg):
         """Subscription callback for actual motor position feedback."""
@@ -75,6 +90,18 @@ finger_bag_{datetime.now().strftime("%Y%m%d_%H%M%S")}',
     def setpoint_callback(self, msg):
         """Subscription callback for actual motor setpoint feedback."""
         self.writer.write('motor_pos_setpoint_feedback',
+                          serialize_message(msg),
+                          self.get_clock().now().nanoseconds)
+
+    def drake_callback(self, msg):
+        """Subscription callback for actual motor drake feedback."""
+        self.writer.write('motor_pos_drake_feedback',
+                          serialize_message(msg),
+                          self.get_clock().now().nanoseconds)
+
+    def drake_torque_callback(self, msg):
+        """Subscription callback for drake torque feedback."""
+        self.writer.write('joint_torque_drake_feedback',
                           serialize_message(msg),
                           self.get_clock().now().nanoseconds)
 
@@ -89,7 +116,13 @@ finger_bag_{datetime.now().strftime("%Y%m%d_%H%M%S")}',
         self.writer.write('actual/joint_feedback',
                           serialize_message(msg),
                           self.get_clock().now().nanoseconds)
-        
+
+    def drake_joint_callback(self, msg):
+        """Subscription callback for setpoint motor drake feedback."""
+        self.writer.write('drake/joint_feedback',
+                          serialize_message(msg),
+                          self.get_clock().now().nanoseconds)
+
     def setpoint_joint_callback(self, msg):
         """Subscription callback for setpoint motor setpoint feedback."""
         self.writer.write('setpoint/joint_feedback',

@@ -1,12 +1,12 @@
 """Leafsystem class connecting drake simulation outputs to ROS."""
 
+from finger_interfaces.msg import MotorFeedback
+
 import numpy as np
 
 from pydrake.systems.framework import LeafSystem
 
 import rclpy
-
-from std_msgs.msg import Float64MultiArray
 
 
 class Drake2Ros(LeafSystem):
@@ -30,18 +30,37 @@ class Drake2Ros(LeafSystem):
             'motor_position', self.nu
         )
 
+        # Input port for motor position
+        self.joint_input_port = self.DeclareVectorInputPort(
+            'finger_state', 10
+        )
+
         # init publisher
         self._vel_pub = self._node.create_publisher(
-            Float64MultiArray,
+            MotorFeedback,
             '/motor_velocity',
             10
         )
 
         # init publisher
         self._pos_pub = self._node.create_publisher(
-            Float64MultiArray,
-            '/motor_position',
+            MotorFeedback,
+            '/motor_pos_drake_feedback',
             10
+        )
+
+        # init publisher
+        self._joint_pub = self._node.create_publisher(
+            MotorFeedback,
+            'joint_feedback',
+            10
+        )
+
+        # create event to publish at specified freq
+        self.DeclarePeriodicPublishEvent(
+            period_sec=1.0/100.0,   # 100 Hz
+            offset_sec=0.0,
+            publish=self._publish_joint_feedback,
         )
 
         # create event to publish at specified freq
@@ -71,13 +90,20 @@ class Drake2Ros(LeafSystem):
     def _publish_motor_velocity(self, context):
         """Publish the motor velocity on a ROS topic."""
         vel = self.vel_input_port.Eval(context)
-        msg = Float64MultiArray()
-        msg.data = vel.tolist()
+        msg = MotorFeedback()
+        msg.motor_positions = vel.tolist()
         self._vel_pub.publish(msg)
 
     def _publish_motor_position(self, context):
         """Publish the motor position on a ROS topic."""
         pos = self.pos_input_port.Eval(context)
-        msg = Float64MultiArray()
-        msg.data = pos.tolist()
+        msg = MotorFeedback()
+        msg.motor_positions = pos.tolist()
         self._pos_pub.publish(msg)
+
+    def _publish_joint_feedback(self, context):
+        """Publish the joint position on a ROS topic."""
+        pos = self.joint_input_port.Eval(context)
+        msg = MotorFeedback()
+        msg.motor_positions = pos.tolist()[0:3]  # take first 3
+        self._joint_pub.publish(msg)

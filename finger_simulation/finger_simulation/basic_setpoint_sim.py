@@ -133,7 +133,7 @@ class FingerSimulation():
 
         # Weld the grass to the world so that it's fixed during the simulation.
         self.finger, = parser.AddModels(
-            url='package://finger_description/urdf/setpoint_finger2.urdf')
+            url='package://finger_description/urdf/setpoint_finger3.urdf')
         self.plant.RenameModelInstance(
             model_instance=self.finger, name='setpoint_finger')
         # parser.AddModels(

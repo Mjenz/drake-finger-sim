@@ -51,8 +51,9 @@ public:
 
     else if (demo =="sinusoidal") {
       RCLCPP_INFO(get_logger(), "Running sinusoidal movement demo...");
-      send_linear_goal({0.0, M_PI/4.0f, 0.0});
-      send_sinusoid_goal(1, 1, M_PI/4.0f, 1.0,  M_PI/4.0f);
+      // send_linear_goal({0.0, M_PI/4.0f, 0.0});
+      // send_sinusoid_goal(1, 1, M_PI/4.0f * 0.3, 1.0,  M_PI/4.0f);
+      send_sinusoid_goal(1, 0, 0.4, 1.0,  0.0);
      
       // send_linear_goal({0.0, 0.0,  M_PI/4.0f});
       // send_sinusoid_goal(1, 2, M_PI/4.0f * 0.3f, 10.0,  M_PI/4.0f);

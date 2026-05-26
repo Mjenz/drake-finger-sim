@@ -60,7 +60,7 @@ public:
     splay_d_ = std::uniform_real_distribution<>(joint_min_.at(0) + 0.1, joint_max_.at(0) - 0.1);
     mcpflex_d_ = std::uniform_real_distribution<>(joint_min_.at(1) + 0.1, joint_max_.at(1) - 0.1);
     pipflex_d_ = std::uniform_real_distribution<>(joint_min_.at(2) + 0.1, joint_max_.at(2) - 0.1);
-    norm_count_d_ = std::normal_distribution<>(50.0, 10.0);
+    norm_count_d_ = std::normal_distribution<>(10.0, 5.0);
 
     // init max count
     max_count_ =  std::max(1, static_cast<int>(norm_count_d_(get_random())));

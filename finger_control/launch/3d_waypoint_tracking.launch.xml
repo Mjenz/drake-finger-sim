@@ -8,16 +8,22 @@
     <choice value="true" />
     <choice value="false" />
   </arg>
+
+  <arg name="bridge" default="simulation" description="Select bridge to deploy.">
+    <choice value="simulation" />
+    <choice value="hardware" />
+  </arg>
   
   <node pkg="rviz2" exec="rviz2" args="-d $(find-pkg-share finger_control)/config/sim_whackamole.rviz" if="$(eval '\'$(var use_rviz)\'==\'true\'')" on_exit="shutdown"/>  
 
-  <!-- <node pkg="finger_simulation" exec="basic" namespace="actual">
+  <node pkg="finger_simulation" exec="basic" namespace="actual" if="$(eval '\'$(var bridge)\'==\'hardware\'')">
     <remap from="/scene_markers/visual" to="/actual/scene_markers/visual"/>
     <remap from="/scene_markers/collision" to="/actual/scene_markers/collision"/>
-  </node> -->
-  <node pkg="finger_simulation" exec="4barsim" namespace="acutal" output="screen">
-    <remap from="/scene_markers/visual" to="/actual/scene_markers/visual"/>
-    <remap from="/scene_markers/collision" to="/actual/scene_markers/collision"/>
+  </node>
+
+  <node pkg="finger_simulation" exec="4barsim" namespace="drake" output="screen">
+    <remap from="/scene_markers/visual" to="/drake/scene_markers/visual"/>
+    <remap from="/scene_markers/collision" to="/drake/scene_markers/collision"/>
   </node>
 
   <node pkg="finger_simulation" exec="basic_setpoint" namespace="setpoint">

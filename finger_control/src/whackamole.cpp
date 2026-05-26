@@ -100,12 +100,12 @@ public:
                                        float(goal_tf_.transform.translation.z)};
 
             // just the goal
-            // send_cartesian_goal({goal});
+            send_cartesian_goal({goal});
             send_linear_goal({0.0, 0.025, 1.25});
-            send_cartesian_goal({above_goal});
-            send_cartesian_goal({above_goal, goal});
-            send_cartesian_goal({goal, above_goal});
-            send_linear_goal({0.0, 0.025, 1.25});
+            // send_cartesian_goal({above_goal});
+            // send_cartesian_goal({above_goal, goal});
+            // send_cartesian_goal({goal, above_goal});
+            // send_linear_goal({0.0, 0.025, 1.25});
 
             // update prev_tf
             prev_tf_ = goal_tf_;

@@ -8,8 +8,6 @@ from pydrake.systems.framework import LeafSystem
 
 import rclpy
 
-from std_msgs.msg import Float64MultiArray
-
 
 class Drake2Ros(LeafSystem):
     """Leaf system connecting drake outputs to ros."""

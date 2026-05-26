@@ -148,13 +148,13 @@ class FingerSimulation():
 
         # Weld the grass to the world so that it's fixed during the simulation.
         self.finger, = parser.AddModels(
-            url='package://finger_description/sdf/finger2.sdf')
+            url='package://finger_description/sdf/finger3.sdf')
         self.plant.RenameModelInstance(
             model_instance=self.finger, name='speedster_finger')
-        parser.AddModels(
-            url='package://finger_simulation/models/grasspatch/model.sdf')
-        parser.AddModels(
-            url='package://finger_simulation/models/Standard_Toilet/model.sdf')
+        # parser.AddModels(
+        #     url='package://finger_simulation/models/grasspatch/model.sdf')
+        # parser.AddModels(
+        #     url='package://finger_simulation/models/Standard_Toilet/model.sdf')
         # self.box, = parser.AddModels(
         #     url='package://finger_simulation/models/box/model.sdf')
 
@@ -188,23 +188,25 @@ class FingerSimulation():
             body_B=distal_phalanx,
             p_BQ=p_BQ,
         )
+
         self.plant.Finalize()
 
         # turn off gravity
         # self.plant.mutable_gravity_field().set_gravity_vector([0, 0, 10.0])
+        # self.plant.mutable_gravity_field().set_gravity_vector([0, 0, 0.0])
 
         # set up other object locations
-        grasspatch_frame = self.plant.GetFrameByName('grasspatch_frame')
-        plant_context = self.plant.CreateDefaultContext()
-        tf_world_grasspatch = grasspatch_frame.CalcPoseInWorld(plant_context)
+        # grasspatch_frame = self.plant.GetFrameByName('grasspatch_frame')
+        # plant_context = self.plant.CreateDefaultContext()
+        # tf_world_grasspatch = grasspatch_frame.CalcPoseInWorld(plant_context)
 
-        standard_toilet_body = self.plant.GetBodyByName('toilet_base_link')
-        tf_grasspatch_toilet = RigidTransform(
-            RollPitchYaw(np.asarray([45, 30, 0]) * np.pi / 180),
-            p=[1.0, 0, 0.8])
-        tf_world_toilet = tf_world_grasspatch.multiply(tf_grasspatch_toilet)
-        self.plant.SetDefaultFloatingBaseBodyPose(
-            standard_toilet_body, tf_world_toilet)
+        # standard_toilet_body = self.plant.GetBodyByName('toilet_base_link')
+        # tf_grasspatch_toilet = RigidTransform(
+        #     RollPitchYaw(np.asarray([45, 30, 0]) * np.pi / 180),
+        #     p=[1.0, 0, 0.8])
+        # tf_world_toilet = tf_world_grasspatch.multiply(tf_grasspatch_toilet)
+        # self.plant.SetDefaultFloatingBaseBodyPose(
+        #     standard_toilet_body, tf_world_toilet)
 
     def constant_torques(self):
         """Initialize joint torque inputs."""
@@ -318,7 +320,7 @@ def main():
         MotorTorqueToForceSystem())
 
     motor_tension_to_joint_torque_system = fingersim.builder.AddSystem(
-        FingerPulleySystem())
+        FingerPulleySystem(node))
 
     tendon_feedback_system = fingersim.builder.AddSystem(
         TendonFeedbackSystem())
@@ -329,9 +331,9 @@ def main():
 
     # PID controller in motor space
     # kp/ki/kd are per-motor gains — tune these for your system
-    kp = np.array([1.0, 1.0, 1.0])
-    ki = np.array([0.0, 0.0, 0.0])
-    kd = np.array([0.1, 0.1, 0.1])
+    kp = np.array([10.0, 10.0, 10.0])
+    ki = np.array([5.0, 5.0, 5.0])
+    kd = np.array([0.01, 0.01, 0.01])
     pid_controller = fingersim.builder.AddSystem(
         PidController(kp=kp, ki=ki, kd=kd)
     )
@@ -409,6 +411,10 @@ def main():
     fingersim.builder.Connect(
         motor_feedback_system.GetOutputPort('motor_position'),
         drake2ros_system.GetInputPort('motor_position'),
+    )
+    fingersim.builder.Connect(
+        fingersim.plant.get_state_output_port(fingersim.finger),
+        drake2ros_system.GetInputPort('finger_state'),
     )
 
     fingersim.build_diagram()
