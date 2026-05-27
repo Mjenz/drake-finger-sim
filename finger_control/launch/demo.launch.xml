@@ -30,7 +30,7 @@
     <remap from="/scene_markers/collision" to="/actual/scene_markers/collision"/>
   </node>
 
-  <node pkg="finger_simulation" exec="4barsim" namespace="drake" output="screen">
+  <node pkg="finger_simulation" exec="4barsim" namespace="drake" output="screen" if="$(eval '\'$(var bridge)\'==\'simulation\'')">
     <remap from="/scene_markers/visual" to="/drake/scene_markers/visual"/>
     <remap from="/scene_markers/collision" to="/drake/scene_markers/collision"/>
   </node>

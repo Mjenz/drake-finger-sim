@@ -39,43 +39,43 @@ public:
       RCLCPP_INFO(get_logger(), "Running linear joint movement demo...");
 
       std::vector<float> start_joint_loc = {0.0, 0.0, 0.0};
-      std::vector<float> start_joint_loc2 = {-0.55, 0.0, 0.0};
+      // std::vector<float> start_joint_loc2 = {-0.55, 0.0, 0.0};
       std::vector<float> end_joint_loc = {0.0, 0.0, 1.57};
-      std::vector<float> end_joint_loc2 = {0.0, 1.57, 0.0};
-      std::vector<float> end_joint_loc3 = {0.55, 0.0, 0.0};
-      std::vector<float> end_joint_loc4 = {0.55, 1.57, 1.57};
-      send_linear_goal(end_joint_loc, start_joint_loc);
-      rclcpp::sleep_for(500ms);
-      send_linear_goal(start_joint_loc, end_joint_loc);
-      rclcpp::sleep_for(500ms);
+      // std::vector<float> end_joint_loc2 = {0.0, 1.57, 0.0};
+      // std::vector<float> end_joint_loc3 = {0.55, 0.0, 0.0};
+      // std::vector<float> end_joint_loc4 = {0.55, 1.57, 1.57};
+      // send_linear_goal(end_joint_loc, start_joint_loc);
+      // rclcpp::sleep_for(500ms);
+      // send_linear_goal(start_joint_loc, end_joint_loc);
+      // rclcpp::sleep_for(500ms);
 
-      send_linear_goal(end_joint_loc2, start_joint_loc);
-      rclcpp::sleep_for(500ms);
-      send_linear_goal(start_joint_loc2, end_joint_loc2);
-      rclcpp::sleep_for(500ms);
+      // send_linear_goal(end_joint_loc2, start_joint_loc);
+      // rclcpp::sleep_for(500ms);
+      // send_linear_goal(start_joint_loc2, end_joint_loc2);
+      // rclcpp::sleep_for(500ms);
 
-      send_linear_goal(end_joint_loc3, start_joint_loc2);
-      rclcpp::sleep_for(500ms);
-      send_linear_goal(start_joint_loc2, end_joint_loc3);
-      rclcpp::sleep_for(500ms);
+      // send_linear_goal(end_joint_loc3, start_joint_loc2);
+      // rclcpp::sleep_for(500ms);
+      // send_linear_goal(start_joint_loc2, end_joint_loc3);
+      // rclcpp::sleep_for(500ms);
 
-      send_linear_goal(end_joint_loc4, start_joint_loc2);
-      rclcpp::sleep_for(500ms);
-      send_linear_goal(start_joint_loc2, end_joint_loc4);
-      rclcpp::sleep_for(500ms);
-      // for (auto i = 0; i < 10; i++) {
-      //   send_linear_goal(end_joint_loc, start_joint_loc);
-      //   rclcpp::sleep_for(500ms);
-      //   send_linear_goal(start_joint_loc, end_joint_loc);
-      //   rclcpp::sleep_for(500ms);
-      // }
+      // send_linear_goal(end_joint_loc4, start_joint_loc2);
+      // rclcpp::sleep_for(500ms);
+      // send_linear_goal(start_joint_loc2, end_joint_loc4);
+      // rclcpp::sleep_for(500ms);
+      for (auto i = 0; i < 10; i++) {
+        send_linear_goal(end_joint_loc, start_joint_loc);
+        rclcpp::sleep_for(500ms);
+        send_linear_goal(start_joint_loc, end_joint_loc);
+        rclcpp::sleep_for(500ms);
+      }
     }
 
     else if (demo =="sinusoidal") {
       RCLCPP_INFO(get_logger(), "Running sinusoidal movement demo...");
       // send_linear_goal({0.0, M_PI/4.0f, 0.0});
-      send_sinusoid_goal(1, 1, M_PI/4.0f * 0.3, 10.0,  M_PI/4.0f);
-      // send_sinusoid_goal(1, 0, 0.4, 1.0,  0.0);
+      // send_sinusoid_goal(1, 1, M_PI/4.0f * 0.5, 1.0,  M_PI/4.0f);
+      send_sinusoid_goal(1, 0, 0.35, 1.0,  0.0);
      
       // send_linear_goal({0.0, 0.0,  M_PI/4.0f});
       // send_sinusoid_goal(1, 2, M_PI/4.0f * 0.3f, 10.0,  M_PI/4.0f);
