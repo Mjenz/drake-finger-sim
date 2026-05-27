@@ -10,6 +10,12 @@ from rclpy.serialization import deserialize_message
 
 import rosbag2_py
 
+import glob
+
+DATA_FOLDER = 'src/robotic-finger/finger_recorder/bags/'
+
+FILE = 'latest'
+
 JOINT_LABELS = ['splay [deg]', 'mcp_flex [deg]', 'pip/dip_flex [deg]']
 
 TOPICS = {
@@ -29,12 +35,20 @@ data = {
 }
 
 reader = rosbag2_py.SequentialReader()
-reader.open(
-    rosbag2_py.StorageOptions(
-        uri='src/robotic-finger/finger_recorder/bags/finger_bag_20260525_192259',
-        storage_id='mcap'),
-    rosbag2_py.ConverterOptions('', ''))
 
+if FILE == 'latest':
+    reader.open(
+        rosbag2_py.StorageOptions(
+            uri=max(glob.glob(DATA_FOLDER + '*')),
+            storage_id='mcap'),
+        rosbag2_py.ConverterOptions('', ''))
+else:
+    reader.open(
+        rosbag2_py.StorageOptions(
+            uri=DATA_FOLDER + FILE,
+            storage_id='mcap'),
+        rosbag2_py.ConverterOptions('', ''))
+    
 while reader.has_next():
     topic, raw, t = reader.read_next()
     if topic in TOPICS:

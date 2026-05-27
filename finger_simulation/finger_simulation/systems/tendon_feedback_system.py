@@ -29,7 +29,7 @@ class TendonFeedbackSystem(LeafSystem):
         self.St_inv = np.linalg.inv(self.St)
 
         # Tendon stiffness vector
-        self.k = np.array([2500.0, 2500.0, 2500.0, 2500.0])
+        self.k = 60.0
 
         # init size of input and output
         nq = 5  # five link positions
@@ -39,8 +39,8 @@ class TendonFeedbackSystem(LeafSystem):
         # declare input and output ports with functions
         self.joint_state_input_port = self.DeclareVectorInputPort(
             'finger_state', nq + nv)
-        # self.tendon_tension_input_port = self.DeclareVectorInputPort(
-        #     'tendon_tension', nu)
+        self.tendon_tension_input_port = self.DeclareVectorInputPort(
+            'tendon_tension', nu)
         self.DeclareVectorOutputPort(
             'tendon_velocity', nu, self._tendon_vel)
         self.DeclareVectorOutputPort(
@@ -59,7 +59,7 @@ class TendonFeedbackSystem(LeafSystem):
         vels = state[5:8]
 
         # calculate tension extension due to force
-        # stretch = tension * self.k  # do nothing with it for nowcb
+        # stretch = tension * self.k  # do nothing with it for now
 
         # transform to tendon space
         output.SetFromVector(self.St.T @ vels)
@@ -67,15 +67,17 @@ class TendonFeedbackSystem(LeafSystem):
     def _tendon_pos(self, context, output):
         """Convert joint state to tendon position."""
         state = self.joint_state_input_port.Eval(context)
-        # tension = self.tendon_tension_input_port.Eval(context)
+        tension = self.tendon_tension_input_port.Eval(context)
 
         # filter out splay, mcp, and pip
-        poses = state[0:3]
+        pos = state[0:3]
 
         # print(f'joint states: {poses}')
 
         # calculate tension extension due to force
-        # stretch = tension * self.k  # do nothing with it for now
+        stretch = tension / self.k  # do nothing with it for now
 
-        # transform to tendon space
-        output.SetFromVector(self.St.T @ poses)
+        # compute tendon displacement
+        tendon = self.St.T @ pos + stretch
+
+        output.SetFromVector(tendon)

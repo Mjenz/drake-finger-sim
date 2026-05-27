@@ -59,7 +59,9 @@ from pydrake.systems.framework import DiagramBuilder, TriggerType
 from pydrake.systems.primitives import (
     ConstantVectorSource,
     Multiplexer,
+    Saturation,
     StateInterpolatorWithDiscreteDerivative,
+    ZeroOrderHold,
 )
 
 import rclpy
@@ -313,7 +315,7 @@ def main():
     rclpy.init(args=None)
     node = rclpy.create_node('drakesim')
 
-    # add external systems
+    # add custom leafsystems
     ros2drake_system = fingersim.builder.AddSystem(Ros2Drake(node))
 
     motor_torque_to_force_system = fingersim.builder.AddSystem(
@@ -327,26 +329,34 @@ def main():
 
     motor_feedback_system = fingersim.builder.AddSystem(
         MotorFeedbackSystem())
+
     drake2ros_system = fingersim.builder.AddSystem(Drake2Ros(node))
 
-    # PID controller in motor space
-    # kp/ki/kd are per-motor gains — tune these for your system
-    kp = np.array([10.0, 10.0, 10.0])
-    ki = np.array([5.0, 5.0, 5.0])
-    kd = np.array([0.01, 0.01, 0.01])
+    # add pre-defined, parametrized systems
     pid_controller = fingersim.builder.AddSystem(
-        PidController(kp=kp, ki=ki, kd=kd)
-    )
+        PidController(kp=np.ones(3) * 40.0,
+                      ki=np.ones(3) * 5.0,
+                      kd=np.ones(3) * 0.1
+    ))
     fingersim.pid_controller = pid_controller
 
-    # Differentiates incoming position setpoints to produce desired velocity
     desired_state_interp = fingersim.builder.AddSystem(
         StateInterpolatorWithDiscreteDerivative(
             num_positions=3,
             time_step=fingersim.dt,
-            suppress_initial_transient=True,
-        )
+            suppress_initial_transient=True,)
     )
+
+    u_max = np.array([0.5, 1.75, 1.75])
+    u_min = np.array([-0.5, -1.75, -1.75])
+    saturation = fingersim.builder.AddSystem(Saturation(
+        min_value=u_min,
+        max_value=u_max,
+    ))
+
+    zero_order_hold = fingersim.builder.AddSystem(ZeroOrderHold(
+        period_sec=fingersim.dt,
+        vector_size=3))
 
     # Combines motor_position + motor_velocity into a single estimated_state
     estimated_state_mux = fingersim.builder.AddSystem(Multiplexer([3, 3]))
@@ -360,8 +370,6 @@ def main():
         desired_state_interp.get_output_port(),
         pid_controller.GetInputPort('desired_state'),
     )
-
-    # Estimated state: MotorFeedback → mux → PID
     fingersim.builder.Connect(
         motor_feedback_system.GetOutputPort('motor_position'),
         estimated_state_mux.get_input_port(0),
@@ -374,11 +382,13 @@ def main():
         estimated_state_mux.get_output_port(),
         pid_controller.GetInputPort('estimated_state'),
     )
-
-    # PID torque output drives the tendon pipeline
     fingersim.builder.Connect(
         pid_controller.GetOutputPort('control'),
-        motor_torque_to_force_system.GetInputPort('motor_torque'),
+        saturation.get_input_port(),
+    )
+    fingersim.builder.Connect(
+        saturation.get_output_port(),
+        motor_torque_to_force_system.GetInputPort('motor_torque')
     )
     fingersim.builder.Connect(
         motor_torque_to_force_system.GetOutputPort('tendon_tension'),
@@ -392,10 +402,14 @@ def main():
         fingersim.plant.get_state_output_port(fingersim.finger),
         tendon_feedback_system.GetInputPort('finger_state'),
     )
-    # fingersim.builder.Connect(
-    #     motor_torque_to_force_system.GetOutputPort('tendon_tension'),
-    #     tendon_feedback_system.GetInputPort('tendon_tension'),
-    # )
+    fingersim.builder.Connect(
+        motor_torque_to_force_system.GetOutputPort('tendon_tension'),
+        zero_order_hold.get_input_port()
+    )
+    fingersim.builder.Connect(
+        zero_order_hold.get_output_port(),
+        tendon_feedback_system.GetInputPort('tendon_tension')
+    )
     fingersim.builder.Connect(
         tendon_feedback_system.GetOutputPort('tendon_velocity'),
         motor_feedback_system.GetInputPort('tendon_velocity'),
