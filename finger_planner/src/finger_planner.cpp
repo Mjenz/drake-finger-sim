@@ -38,6 +38,8 @@
 #include "finger_interfaces/action/sinusoidal.hpp"
 #include "finger_interfaces/action/linear.hpp"
 #include "finger_interfaces/action/force.hpp"
+#include "finger_interfaces/action/chirp.hpp"
+#include "finger_interfaces/action/chirp_velocity.hpp"
 #include "finger_interfaces/msg/motor_feedback.hpp"
 #include "finger_interfaces/msg/motor_activity.hpp"
 
@@ -63,6 +65,8 @@ public:
   using GoalHandleSinusoidal = rclcpp_action::ServerGoalHandle<finger_interfaces::action::Sinusoidal>;
   using GoalHandleLinear = rclcpp_action::ServerGoalHandle<finger_interfaces::action::Linear>;
   using GoalHandleForce = rclcpp_action::ServerGoalHandle<finger_interfaces::action::Force>;
+  using GoalHandleChirp = rclcpp_action::ServerGoalHandle<finger_interfaces::action::Chirp>;
+  using GoalHandleChirpVelocity = rclcpp_action::ServerGoalHandle<finger_interfaces::action::ChirpVelocity>;
 
   FingerPlanner()
   : Node("finger_planner"),
@@ -427,6 +431,120 @@ public:
     force_step_handle_accepted,
     rcl_action_server_get_default_options(),
     action_cb_group_);
+
+    // create chirp action
+    auto chirp_handle_goal = [this](
+      const rclcpp_action::GoalUUID,
+      std::shared_ptr<const finger_interfaces::action::Chirp::Goal> goal)
+      {
+        RCLCPP_INFO(get_logger(), "Received chirp goal request:");
+        // check that joint is 0, 1, or 2
+        if (((goal->joint == 0) || (goal->joint == 1) || (goal->joint == 2))) {
+
+          // print request
+          RCLCPP_INFO_STREAM(get_logger(), "Received chirp goal request for joint" <<
+            goal->joint << " with amp " << goal->amp << ", freq " << goal->freq_init << 
+            ", freq_final " << goal->freq_final << ", time " << goal->time << ", and v_shift " << goal->v_shift);
+
+          // accept request
+          return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
+        } else {
+          // print error
+          RCLCPP_INFO(get_logger(), "Goal request REJECTED because joint is not 0, 1, or 2.");
+
+          // reject request
+          return rclcpp_action::GoalResponse::REJECT;
+        }
+      };
+
+    auto chirp_handle_cancel = [this](
+      const std::shared_ptr<GoalHandleChirp>)
+      {
+        RCLCPP_INFO(this->get_logger(), "Received request to cancel chirp goal.");
+        return rclcpp_action::CancelResponse::ACCEPT;
+      };
+
+    auto chirp_handle_accepted = [this](
+      const std::shared_ptr<GoalHandleChirp> goal_handle)
+      {
+        // set cmd state
+        cmd_state_ = CmdState::BEGIN;
+
+        // init message attempts to 0 to be safe
+        msg_attempts_ = 0;
+
+        // start timer for action
+        action_timer_ = create_wall_timer(100ms, [this, goal_handle](){
+              return this->execute_chirp_goal(goal_handle);
+          },
+        timer_cb_group_);
+      };
+
+    chirp_action_server_ = rclcpp_action::create_server<finger_interfaces::action::Chirp>(
+    this,
+    "/chirp_move",
+    chirp_handle_goal,
+    chirp_handle_cancel,
+    chirp_handle_accepted,
+    rcl_action_server_get_default_options(),
+    action_cb_group_);
+
+    // create chirp_velocity action
+    auto chirp_velocity_handle_goal = [this](
+      const rclcpp_action::GoalUUID,
+      std::shared_ptr<const finger_interfaces::action::ChirpVelocity::Goal> goal)
+      {
+        RCLCPP_INFO(get_logger(), "Received chirp velocity goal request:");
+        // check that joint is 0, 1, or 2
+        if (((goal->joint == 0) || (goal->joint == 1) || (goal->joint == 2))) {
+
+          // print request
+          RCLCPP_INFO_STREAM(get_logger(), "Received chirp velocity goal request for joint" <<
+            goal->joint << " with amp " << goal->amp << ", freq " << goal->freq_init << 
+            ", freq_final " << goal->freq_final << ", time " << goal->time << ", and v_shift " << goal->start_pos);
+
+          // accept request
+          return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
+        } else {
+          // print error
+          RCLCPP_INFO(get_logger(), "Goal request REJECTED because joint is not 0, 1, or 2.");
+
+          // reject request
+          return rclcpp_action::GoalResponse::REJECT;
+        }
+      };
+
+    auto chirp_velocity_handle_cancel = [this](
+      const std::shared_ptr<GoalHandleChirpVelocity>)
+      {
+        RCLCPP_INFO(this->get_logger(), "Received request to cancel chirp velocity goal.");
+        return rclcpp_action::CancelResponse::ACCEPT;
+      };
+
+    auto chirp_velocity_handle_accepted = [this](
+      const std::shared_ptr<GoalHandleChirpVelocity> goal_handle)
+      {
+        // set cmd state
+        cmd_state_ = CmdState::BEGIN;
+
+        // init message attempts to 0 to be safe
+        msg_attempts_ = 0;
+
+        // start timer for action
+        action_timer_ = create_wall_timer(100ms, [this, goal_handle](){
+              return this->execute_chirp_velocity_goal(goal_handle);
+          },
+        timer_cb_group_);
+      };
+
+    chirp_velocity_action_server_ = rclcpp_action::create_server<finger_interfaces::action::ChirpVelocity>(
+    this,
+    "/chirp_velocity_move",
+    chirp_velocity_handle_goal,
+    chirp_velocity_handle_cancel,
+    chirp_velocity_handle_accepted,
+    rcl_action_server_get_default_options(),
+    action_cb_group_);
   }
 
 private:
@@ -460,6 +578,8 @@ private:
   rclcpp_action::Server<finger_interfaces::action::Sinusoidal>::SharedPtr sinusoidal_action_server_;
   rclcpp_action::Server<finger_interfaces::action::Linear>::SharedPtr linear_action_server_;
   rclcpp_action::Server<finger_interfaces::action::Force>::SharedPtr force_step_action_server_;
+  rclcpp_action::Server<finger_interfaces::action::Chirp>::SharedPtr chirp_action_server_;
+  rclcpp_action::Server<finger_interfaces::action::ChirpVelocity>::SharedPtr chirp_velocity_action_server_;
   rclcpp::TimerBase::SharedPtr action_timer_;
   std::shared_ptr<Transformer> transforms_;
   std::shared_ptr<JointTrajectory> generator_;
@@ -467,6 +587,8 @@ private:
   std::shared_ptr<finger_interfaces::action::Sinusoidal::Result> sinusoidal_result_;
   std::shared_ptr<finger_interfaces::action::Linear::Result> linear_result_;
   std::shared_ptr<finger_interfaces::action::Force::Result> force_step_result_;
+  std::shared_ptr<finger_interfaces::action::Chirp::Result> chirp_result_;
+  std::shared_ptr<finger_interfaces::action::ChirpVelocity::Result> chirp_velocity_result_;
   finger_interfaces::msg::MotorFeedback motor_actual_feedback_;
   finger_interfaces::msg::MotorFeedback motor_setpoint_feedback_;
   finger_interfaces::msg::MotorActivity motor_activity_feedback_;
@@ -796,6 +918,52 @@ private:
       },
       goal_handle->get_goal()->repeat,
       'T');
+  }
+
+  void execute_chirp_goal(const std::shared_ptr<GoalHandleChirp> goal_handle)
+  {
+    execute_goal<finger_interfaces::action::Chirp>(
+      goal_handle, chirp_result_,
+      [this](const auto & goal) {
+        if (((goal.joint == 0) || (goal.joint == 1) || (goal.joint == 2))) {
+          RCLCPP_INFO_STREAM(get_logger(), "Received chirp goal request for joint" <<
+            goal.joint << " with amp " << goal.amp << ", freq " << goal.freq_init << 
+            ", freq_final " << goal.freq_final << ", time " << goal.time << ", and v_shift " << goal.v_shift);
+
+          // accept request
+          return generator_->generate_chirp(goal.joint, goal.amp, goal.freq_init, goal.freq_final, goal.time, goal.v_shift);
+        } else {
+          RCLCPP_INFO(get_logger(), "Goal request REJECTED because joint is not 0, 1, or 2.");
+
+          // reject
+          throw std::runtime_error("Joint is malformed.");
+        }
+      },
+      0,
+      'P');
+  }
+
+  void execute_chirp_velocity_goal(const std::shared_ptr<GoalHandleChirpVelocity> goal_handle)
+  {
+    execute_goal<finger_interfaces::action::ChirpVelocity>(
+      goal_handle, chirp_velocity_result_,
+      [this](const auto & goal) {
+        if (((goal.joint == 0) || (goal.joint == 1) || (goal.joint == 2))) {
+          RCLCPP_INFO_STREAM(get_logger(), "Received chirp goal request for joint" <<
+            goal.joint << " with amp " << goal.amp << ", freq " << goal.freq_init << 
+            ", freq_final " << goal.freq_final << ", time " << goal.time << ", and v_shift " << goal.start_pos);
+
+          // accept request
+          return generator_->generate_chirp_velocity(goal.joint, goal.amp, goal.freq_init, goal.freq_final, goal.time, goal.start_pos);
+        } else {
+          RCLCPP_INFO(get_logger(), "Goal request REJECTED because joint is not 0, 1, or 2.");
+
+          // reject
+          throw std::runtime_error("Joint is malformed.");
+        }
+      },
+      0,
+      'V');
   }
 
 };

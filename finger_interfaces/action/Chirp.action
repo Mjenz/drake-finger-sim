@@ -1,0 +1,11 @@
+# Action message type to generate and command a chirp trajectory for a specified joint + parameters
+int32 joint         # The index of the joint to generate the sinusoid for (0, 1, or 2) 
+float32 amp         # The amplitude of the chirp (in radians)
+float32 freq_init   # The initial frequency of the chirp (in Hz)
+float32 freq_final  # The final frequency of the chirp (in Hz)
+float32 time        # The duration of the chirp (in seconds)
+float32 v_shift     # The vertical shift of the sinusoid (in radians)
+---
+int32 success
+---
+float32[] state

@@ -14,6 +14,8 @@ set(action_files
   "action/Sinusoidal.action"
   "action/Linear.action"
   "action/Force.action"
+  "action/Chirp.action"
+  "action/ChirpVelocity.action"
 )
 
 set(msg_files

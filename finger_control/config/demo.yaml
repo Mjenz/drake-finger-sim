@@ -1,0 +1,38 @@
+/finger_demo:
+  ros__parameters:
+    # Sinusoidal demo parameters
+    sinusoidal:
+      repeat: 1
+      joint: 2
+      amp: 0.7854
+      freq: 1.0
+      v_offset: 0.7854
+
+    # Chirp demo parameters
+    chirp:
+      joint: 1
+      amp: 0.2
+      freq_init: 1.0
+      freq_final: 10.0
+      time: 10.0
+      v_offset: 0.7854   # pi/4 rad
+      start_pos: 0.7854  # pi/4 rad
+
+    # Linear move demo parameters
+    linear:
+      start_loc: [0.0, 0.0, 0.0]
+      end_loc: [0.0, 0.0, 1.57]
+
+    # Force step demo parameters
+    force:
+      repeat: 1
+      freq: 1.0
+      q_state: [0.0, 0.0, 0.0]
+      low: [0.0, 0.0, -10.0]
+      high: [0.0, 0.0, -10.0]
+
+    # IK demo parameters
+    ik:
+      repeat: 20
+      start: [0.05, 0.08, -0.1]
+      end: [-0.05, 0.08, -0.1]

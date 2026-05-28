@@ -16,6 +16,8 @@
 #include "finger_interfaces/action/sinusoidal.hpp"
 #include "finger_interfaces/action/linear.hpp"
 #include "finger_interfaces/action/force.hpp"
+#include "finger_interfaces/action/chirp.hpp"
+#include "finger_interfaces/action/chirp_velocity.hpp"
 #include "finger_interfaces/msg/motor_feedback.hpp"
 
 #include "fingerlib/joint_trajectory.hpp"
@@ -25,14 +27,18 @@ using namespace std::chrono_literals;
 class FingerControlBase : public rclcpp::Node
 {
 public:
-  using GoalHandleCartesian = rclcpp_action::ClientGoalHandle<finger_interfaces::action::Cartesian>;
-  using GoalHandleSinusoidal = rclcpp_action::ClientGoalHandle<finger_interfaces::action::Sinusoidal>;
-  using GoalHandleLinear = rclcpp_action::ClientGoalHandle<finger_interfaces::action::Linear>;
-  using GoalHandleForce = rclcpp_action::ClientGoalHandle<finger_interfaces::action::Force>;
   using Cartesian = finger_interfaces::action::Cartesian;
   using Sinusoidal = finger_interfaces::action::Sinusoidal;
   using Linear = finger_interfaces::action::Linear;
   using Force = finger_interfaces::action::Force;
+  using Chirp = finger_interfaces::action::Chirp;
+  using ChirpVelocity = finger_interfaces::action::ChirpVelocity;
+  using GoalHandleCartesian = rclcpp_action::ClientGoalHandle<Cartesian>;
+  using GoalHandleSinusoidal = rclcpp_action::ClientGoalHandle<Sinusoidal>;
+  using GoalHandleLinear = rclcpp_action::ClientGoalHandle<Linear>;
+  using GoalHandleForce = rclcpp_action::ClientGoalHandle<Force>;
+  using GoalHandleChirp = rclcpp_action::ClientGoalHandle<Chirp>;
+  using GoalHandleChirpVelocity = rclcpp_action::ClientGoalHandle<ChirpVelocity>;
 
   explicit FingerControlBase(const std::string & node_name)
   : Node(node_name)
@@ -54,6 +60,8 @@ public:
     sinusoidal_client_ = rclcpp_action::create_client<Sinusoidal>(this, "/sinusoidal_move");
     linear_client_ = rclcpp_action::create_client<Linear>(this, "/linear_move");
     force_step_client_ = rclcpp_action::create_client<Force>(this, "/force_step_move");
+    chirp_client_ = rclcpp_action::create_client<Chirp>(this, "/chirp_move");
+    chirp_velocity_client_ = rclcpp_action::create_client<ChirpVelocity>(this, "/chirp_velocity_move");
 
     while (!cartesian_client_->wait_for_action_server(1s)) {
       if (!rclcpp::ok()) {
@@ -83,6 +91,20 @@ public:
       }
       RCLCPP_INFO(get_logger(), "waiting for force_step action to appear...");
     }
+    while (!chirp_client_->wait_for_action_server(1s)) {
+      if (!rclcpp::ok()) {
+        RCLCPP_ERROR(get_logger(), "client interrupted while waiting for chirp action to appear.");
+        rclcpp::shutdown();
+      }
+      RCLCPP_INFO(get_logger(), "waiting for chirp action to appear...");
+    }
+    while (!chirp_velocity_client_->wait_for_action_server(1s)) {
+      if (!rclcpp::ok()) {
+        RCLCPP_ERROR(get_logger(), "client interrupted while waiting for chirp velocity action to appear.");
+        rclcpp::shutdown();
+      }
+      RCLCPP_INFO(get_logger(), "waiting for chirp_velocity action to appear...");
+    }
 
     motor_actual_feedback_sub_ = create_subscription<finger_interfaces::msg::MotorFeedback>(
       "/motor_pos_actual_feedback", 10,
@@ -96,7 +118,7 @@ public:
       rclcpp::sleep_for(100ms);
     }
     RCLCPP_INFO(get_logger(), "Motor feedback received, proceeding.");
-
+  
     rclcpp::sleep_for(3000ms);
   }
 
@@ -110,15 +132,15 @@ protected:
   arma::vec joint_max_;
   arma::mat44 M_;
   std::vector<double> four_bar_lengths_;
-
   double gnd_height_;
   std::shared_ptr<Transformer> transforms_;
   std::shared_ptr<JointTrajectory> generator_;
-
   rclcpp_action::Client<Cartesian>::SharedPtr cartesian_client_;
   rclcpp_action::Client<Sinusoidal>::SharedPtr sinusoidal_client_;
   rclcpp_action::Client<Linear>::SharedPtr linear_client_;
   rclcpp_action::Client<Force>::SharedPtr force_step_client_;
+  rclcpp_action::Client<Chirp>::SharedPtr chirp_client_;
+  rclcpp_action::Client<ChirpVelocity>::SharedPtr chirp_velocity_client_;
   rclcpp::Subscription<finger_interfaces::msg::MotorFeedback>::SharedPtr motor_actual_feedback_sub_;
   finger_interfaces::msg::MotorFeedback motor_actual_feedback_;
 
@@ -421,6 +443,106 @@ protected:
       RCLCPP_INFO(get_logger(), "Goal rejected"); return;
     }
     auto result_future = force_step_client_->async_get_result(goal_handle);
+    spin_until_complete(result_future);
+    RCLCPP_INFO(get_logger(), "Goal completed");
+  }
+
+  void send_chirp_goal(int joint, float amp, float freq_init, float freq_final, float time, float v_shift)
+  {
+    auto goal_msg = Chirp::Goal();
+    goal_msg.joint = joint;
+    goal_msg.amp = amp;
+    goal_msg.freq_init = freq_init;
+    goal_msg.freq_final = freq_final;
+    goal_msg.time = time;
+    goal_msg.v_shift = v_shift;
+
+    RCLCPP_INFO(get_logger(), "Sending goal");
+
+    auto send_goal_options = rclcpp_action::Client<Chirp>::SendGoalOptions();
+    send_goal_options.goal_response_callback =
+      [this](const GoalHandleChirp::SharedPtr & goal_handle) {
+        if (!goal_handle) {
+          RCLCPP_ERROR(get_logger(), "Goal was rejected by server");
+        } else {
+          RCLCPP_INFO(get_logger(), "Goal accepted by server, waiting for result");
+        }
+      };
+    send_goal_options.feedback_callback = [this](
+      GoalHandleChirp::SharedPtr,
+      const std::shared_ptr<const Chirp::Feedback>) {
+        RCLCPP_INFO(get_logger(), "feedback received...");
+      };
+    send_goal_options.result_callback = [this](const GoalHandleChirp::WrappedResult & result) {
+        switch (result.code) {
+          case rclcpp_action::ResultCode::SUCCEEDED: break;
+          case rclcpp_action::ResultCode::ABORTED:
+            RCLCPP_ERROR_STREAM(get_logger(), "Goal was aborted"); return;
+          case rclcpp_action::ResultCode::CANCELED:
+            RCLCPP_ERROR_STREAM(get_logger(), "Goal was canceled"); return;
+          default:
+            RCLCPP_ERROR_STREAM(get_logger(), "Unknown result code"); return;
+        }
+        RCLCPP_INFO_STREAM(get_logger(), "result code: " << result.result.get()->success);
+      };
+
+    auto goal_handle_future = chirp_client_->async_send_goal(goal_msg, send_goal_options);
+    spin_until_complete(goal_handle_future);
+    auto goal_handle = goal_handle_future.get();
+    if (!goal_handle) {
+      RCLCPP_INFO(get_logger(), "Goal rejected"); return;
+    }
+    auto result_future = chirp_client_->async_get_result(goal_handle);
+    spin_until_complete(result_future);
+    RCLCPP_INFO(get_logger(), "Goal completed");
+  }
+
+  void send_chirp_velocity_goal(int joint, float amp, float freq_init, float freq_final, float time, float start_pos)
+  {
+    auto goal_msg = ChirpVelocity::Goal();
+    goal_msg.joint = joint;
+    goal_msg.amp = amp;
+    goal_msg.freq_init = freq_init;
+    goal_msg.freq_final = freq_final;
+    goal_msg.time = time;
+    goal_msg.start_pos = start_pos;
+
+    RCLCPP_INFO(get_logger(), "Sending goal");
+
+    auto send_goal_options = rclcpp_action::Client<ChirpVelocity>::SendGoalOptions();
+    send_goal_options.goal_response_callback =
+      [this](const GoalHandleChirpVelocity::SharedPtr & goal_handle) {
+        if (!goal_handle) {
+          RCLCPP_ERROR(get_logger(), "Goal was rejected by server");
+        } else {
+          RCLCPP_INFO(get_logger(), "Goal accepted by server, waiting for result");
+        }
+      };
+    send_goal_options.feedback_callback = [this](
+      GoalHandleChirpVelocity::SharedPtr,
+      const std::shared_ptr<const ChirpVelocity::Feedback>) {
+        RCLCPP_INFO(get_logger(), "feedback received...");
+      };
+    send_goal_options.result_callback = [this](const GoalHandleChirpVelocity::WrappedResult & result) {
+        switch (result.code) {
+          case rclcpp_action::ResultCode::SUCCEEDED: break;
+          case rclcpp_action::ResultCode::ABORTED:
+            RCLCPP_ERROR_STREAM(get_logger(), "Goal was aborted"); return;
+          case rclcpp_action::ResultCode::CANCELED:
+            RCLCPP_ERROR_STREAM(get_logger(), "Goal was canceled"); return;
+          default:
+            RCLCPP_ERROR_STREAM(get_logger(), "Unknown result code"); return;
+        }
+        RCLCPP_INFO_STREAM(get_logger(), "result code: " << result.result.get()->success);
+      };
+
+    auto goal_handle_future = chirp_velocity_client_->async_send_goal(goal_msg, send_goal_options);
+    spin_until_complete(goal_handle_future);
+    auto goal_handle = goal_handle_future.get();
+    if (!goal_handle) {
+      RCLCPP_INFO(get_logger(), "Goal rejected"); return;
+    }
+    auto result_future = chirp_velocity_client_->async_get_result(goal_handle);
     spin_until_complete(result_future);
     RCLCPP_INFO(get_logger(), "Goal completed");
   }

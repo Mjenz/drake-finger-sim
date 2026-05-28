@@ -30,39 +30,14 @@ public:
   FingerDemo()
   : FingerControlBase("finger_demo")
   {
-    auto param_desc1 = rcl_interfaces::msg::ParameterDescriptor{};
-    param_desc1.description = "The demo that should be run.";
-    declare_parameter("demo", "none", param_desc1);
-    std::string demo = get_parameter("demo").as_string();
+    declare_and_get_demo_params();
 
-    if (demo =="linear") {
+    if (demo_ == "linear") {
       RCLCPP_INFO(get_logger(), "Running linear joint movement demo...");
 
-      std::vector<float> start_joint_loc = {0.0, 0.0, 0.0};
-      // std::vector<float> start_joint_loc2 = {-0.55, 0.0, 0.0};
-      std::vector<float> end_joint_loc = {0.0, 0.0, 1.57};
-      // std::vector<float> end_joint_loc2 = {0.0, 1.57, 0.0};
-      // std::vector<float> end_joint_loc3 = {0.55, 0.0, 0.0};
-      // std::vector<float> end_joint_loc4 = {0.55, 1.57, 1.57};
-      // send_linear_goal(end_joint_loc, start_joint_loc);
-      // rclcpp::sleep_for(500ms);
-      // send_linear_goal(start_joint_loc, end_joint_loc);
-      // rclcpp::sleep_for(500ms);
+      std::vector<float> start_joint_loc(linear_start_loc_.begin(), linear_start_loc_.end());
+      std::vector<float> end_joint_loc(linear_end_loc_.begin(), linear_end_loc_.end());
 
-      // send_linear_goal(end_joint_loc2, start_joint_loc);
-      // rclcpp::sleep_for(500ms);
-      // send_linear_goal(start_joint_loc2, end_joint_loc2);
-      // rclcpp::sleep_for(500ms);
-
-      // send_linear_goal(end_joint_loc3, start_joint_loc2);
-      // rclcpp::sleep_for(500ms);
-      // send_linear_goal(start_joint_loc2, end_joint_loc3);
-      // rclcpp::sleep_for(500ms);
-
-      // send_linear_goal(end_joint_loc4, start_joint_loc2);
-      // rclcpp::sleep_for(500ms);
-      // send_linear_goal(start_joint_loc2, end_joint_loc4);
-      // rclcpp::sleep_for(500ms);
       for (auto i = 0; i < 10; i++) {
         send_linear_goal(end_joint_loc, start_joint_loc);
         rclcpp::sleep_for(500ms);
@@ -71,70 +46,199 @@ public:
       }
     }
 
-    else if (demo =="sinusoidal") {
+    else if (demo_ == "sinusoidal") {
       RCLCPP_INFO(get_logger(), "Running sinusoidal movement demo...");
-      // send_linear_goal({0.0, M_PI/4.0f, 0.0});
-      // send_sinusoid_goal(1, 1, M_PI/4.0f * 0.5, 1.0,  M_PI/4.0f);
-      send_sinusoid_goal(1, 0, 0.35, 1.0,  0.0);
-     
-      // send_linear_goal({0.0, 0.0,  M_PI/4.0f});
-      // send_sinusoid_goal(1, 2, M_PI/4.0f * 0.3f, 10.0,  M_PI/4.0f);
+
+      // send_sinusoid_goal(repeat, joint, amp, freq, v_offset);
+      send_sinusoid_goal(sinusoidal_repeat_, sinusoidal_joint_, sinusoidal_amp_, sinusoidal_freq_, sinusoidal_v_offset_);
+
     }
 
-    else if (demo =="ik") { 
-      RCLCPP_INFO(get_logger(), "Running inverse kinematics demo...");   
-      std::vector<float> start = {0.05f, 0.08f, -0.1f};            
-      std::vector<float> end   = {-0.05f, 0.08f, -0.1f};
+    else if (demo_ == "force_step") {
+      RCLCPP_INFO(get_logger(), "Running force step demo...");
+      std::vector<float> q_joints(force_q_state_.begin(), force_q_state_.end());
+      std::vector<float> force_low(force_low_.begin(), force_low_.end());
+      std::vector<float> force_high(force_high_.begin(), force_high_.end());
 
-      // move out of singularity
-      send_linear_goal({0.1, 0.1, 0.1});
+      send_force_step_goal(q_joints, force_low, force_high, force_freq_, force_repeat_);
+    }
+
+    else if (demo_ == "ik") {
+      RCLCPP_INFO(get_logger(), "Running inverse kinematics demo...");
+      std::vector<float> start(ik_start_.begin(), ik_start_.end());
+      std::vector<float> end(ik_end_.begin(), ik_end_.end());
 
       // move to start
-      send_cartesian_goal({start});        
-                                           
-      for (auto i = 0; i < 20; i++) {
-          send_cartesian_goal({start, end});        
+      send_cartesian_goal({start});
+
+      for (auto i = 0; i < ik_repeat_; i++) {
+          send_cartesian_goal({start, end});
           send_cartesian_goal({end, start});
       }
     }
 
-    else if (demo =="force_step") {   
-      RCLCPP_INFO(get_logger(), "Running force step demo...");   
-      std::vector<float> q_joints = {0.0f, 0.0f, 0.0f};
-      std::vector<float> force_low = {0.0f, 0.0f, -10.0f};
-      std::vector<float> force_high = {0.0f, 0.0f, -10.0f};
-
-      send_force_step_goal(q_joints, force_low, force_high, 1.0, 1);
-    }
-
-    else if (demo =="cartesian_ik") {   
-      RCLCPP_INFO(get_logger(), "Running cartesian ik demo...");   
+    else if (demo_ == "cartesian_ik") {
+      RCLCPP_INFO(get_logger(), "Running cartesian ik demo...");
 
       auto lerp_waypoints = [](const std::vector<float>& start,
-        const std::vector<float>& end, int n = 30) {                
+        const std::vector<float>& end, int n = 30) {
             std::vector<std::vector<float>> points;
-            for (int i = 0; i <= n; ++i) {                          
+            for (int i = 0; i <= n; ++i) {
                 float t = static_cast<float>(i) / n;
-                points.push_back({                                  
+                points.push_back({
                     start[0] + t * (end[0] - start[0]),
-                    start[1] + t * (end[1] - start[1]),             
-                    start[2] + t * (end[2] - start[2])              
+                    start[1] + t * (end[1] - start[1]),
+                    start[2] + t * (end[2] - start[2])
                 });
-            }                                                       
-            return points;   
+            }
+            return points;
         };
 
-        std::vector<float> start = {0.05f, 0.1f, -0.1f};            
-        std::vector<float> end   = {-0.05f, 0.1f, -0.1f};
-                                                                    
-        for (auto i = 0; i < 20; i++) {
-            send_cartesian_goal(lerp_waypoints(start, end));        
-            send_cartesian_goal(lerp_waypoints(end, start));
-        }    
+      std::vector<float> start(ik_start_.begin(), ik_start_.end());
+      std::vector<float> end(ik_end_.begin(), ik_end_.end());
+
+      for (auto i = 0; i < 20; i++) {
+          send_cartesian_goal(lerp_waypoints(start, end));
+          send_cartesian_goal(lerp_waypoints(end, start));
       }
+    }
+
+    else if (demo_ == "chirp") {
+      RCLCPP_INFO(get_logger(), "Running chirp demo...");
+
+      send_chirp_goal(chirp_joint_, chirp_amp_, chirp_freq_init_, chirp_freq_final_, chirp_time_, chirp_v_offset_);
+    }
+
+    else if (demo_ == "chirp_velocity") {
+      RCLCPP_INFO(get_logger(), "Running chirp velocity demo...");
+
+      send_chirp_velocity_goal(chirp_joint_, chirp_amp_, chirp_freq_init_, chirp_freq_final_, chirp_time_, chirp_start_pos_);
+    }
+
   }
 
 private:
+  std::string demo_;
+  int sinusoidal_repeat_;
+  int sinusoidal_joint_;
+  double sinusoidal_amp_;
+  double sinusoidal_freq_;
+  double sinusoidal_v_offset_;
+  int chirp_joint_;
+  double chirp_amp_;
+  double chirp_freq_init_;
+  double chirp_freq_final_;
+  double chirp_time_;
+  double chirp_v_offset_;
+  double chirp_start_pos_;
+  std::vector<double> linear_start_loc_;
+  std::vector<double> linear_end_loc_;
+  double force_freq_;
+  int force_repeat_;
+  std::vector<double> force_q_state_;
+  std::vector<double> force_low_;
+  std::vector<double> force_high_;
+  int ik_repeat_;
+  std::vector<double> ik_start_;
+  std::vector<double> ik_end_;
+
+  void declare_and_get_demo_params()
+  {
+    auto param_desc = rcl_interfaces::msg::ParameterDescriptor{};
+
+    param_desc.description = "The demo that should be run.";
+    declare_parameter("demo", "none", param_desc);
+
+    param_desc.description = "Boolean (1 or 0) to enable repeat for sinusoidal";
+    declare_parameter("sinusoidal.repeat", 0, param_desc);
+
+    param_desc.description = "The joint to oscillate for sinusoidal demo.";
+    declare_parameter("sinusoidal.joint", 0, param_desc);
+
+    param_desc.description = "The amplitude to oscillate at for sinusoidal demo (rad).";
+    declare_parameter("sinusoidal.amp", 0.0, param_desc);
+
+    param_desc.description = "The frequency to oscillate at for sinusoidal demo (Hz).";
+    declare_parameter("sinusoidal.freq", 0.0, param_desc);
+
+    param_desc.description = "The vertical offset (in radians) for sinusoidal demo.";
+    declare_parameter("sinusoidal.v_offset", 0.0, param_desc);
+
+    param_desc.description = "The joint to oscillate for chirp demos.";
+    declare_parameter("chirp.joint", 0, param_desc);
+
+    param_desc.description = "The amplitude to oscillate at for chirp demos (rad).";
+    declare_parameter("chirp.amp", 0.0, param_desc);
+
+    param_desc.description = "The initial frequency for chirp demos (Hz).";
+    declare_parameter("chirp.freq_init", 0.0, param_desc);
+
+    param_desc.description = "The final frequency for chirp demos (Hz).";
+    declare_parameter("chirp.freq_final", 0.0, param_desc);
+
+    param_desc.description = "The length of time for the chirp demos in seconds.";
+    declare_parameter("chirp.time", 0.0, param_desc);
+
+    param_desc.description = "The vertical offset for chirp demo (in radians).";
+    declare_parameter("chirp.v_offset", 0.0, param_desc);
+
+    param_desc.description = "The starting position for chirp velocity demo (in radians).";
+    declare_parameter("chirp.start_pos", 0.0, param_desc);
+
+    param_desc.description = "The start position in joint space for linear move demo <splay, mcp, pipdip> in radians.";
+    declare_parameter("linear.start_loc", std::vector<double>{0.0, 0.0, 0.0}, param_desc);
+
+    param_desc.description = "The end position in joint space for linear move demo <splay, mcp, pipdip> in radians.";
+    declare_parameter("linear.end_loc", std::vector<double>{0.0, 0.0, 0.0}, param_desc);
+
+    param_desc.description = "The frequency to alterate force at for the force demo.";
+    declare_parameter("force.freq", 0.0, param_desc);
+
+    param_desc.description = "Boolean (1 or 0) to indicate if force demo should be repeated.";
+    declare_parameter("force.repeat", 0, param_desc);
+
+    param_desc.description = "The joint space state for force demo <splay, mcp, pipdip> in radians.";
+    declare_parameter("force.q_state", std::vector<double>{0.0, 0.0, 0.0}, param_desc);
+
+    param_desc.description = "The low force for the force demo <F_x, F_y, F_z> in newtons.";
+    declare_parameter("force.low", std::vector<double>{0.0, 0.0, 0.0}, param_desc);
+
+    param_desc.description = "The high force for the force demo <F_x, F_y, F_z> in newtons.";
+    declare_parameter("force.high", std::vector<double>{0.0, 0.0, 0.0}, param_desc);
+
+    param_desc.description = "Number of back-and-forth repetitions for the ik demo.";
+    declare_parameter("ik.repeat", 0, param_desc);
+
+    param_desc.description = "The start position in cartesian space for ik demo <X, Y, Z> in meters.";
+    declare_parameter("ik.start", std::vector<double>{0.0, 0.0, 0.0}, param_desc);
+
+    param_desc.description = "The end position in cartesian space for ik demo <X, Y, Z> in meters.";
+    declare_parameter("ik.end", std::vector<double>{0.0, 0.0, 0.0}, param_desc);
+
+    demo_ = get_parameter("demo").as_string();
+    sinusoidal_repeat_ = get_parameter("sinusoidal.repeat").as_int();
+    sinusoidal_joint_ = get_parameter("sinusoidal.joint").as_int();
+    sinusoidal_amp_ = get_parameter("sinusoidal.amp").as_double();
+    sinusoidal_freq_ = get_parameter("sinusoidal.freq").as_double();
+    sinusoidal_v_offset_ = get_parameter("sinusoidal.v_offset").as_double();
+    chirp_joint_ = get_parameter("chirp.joint").as_int();
+    chirp_amp_ = get_parameter("chirp.amp").as_double();
+    chirp_freq_init_ = get_parameter("chirp.freq_init").as_double();
+    chirp_freq_final_ = get_parameter("chirp.freq_final").as_double();
+    chirp_time_ = get_parameter("chirp.time").as_double();
+    chirp_v_offset_ = get_parameter("chirp.v_offset").as_double();
+    chirp_start_pos_ = get_parameter("chirp.start_pos").as_double();
+    linear_start_loc_ = get_parameter("linear.start_loc").as_double_array();
+    linear_end_loc_ = get_parameter("linear.end_loc").as_double_array();
+    force_q_state_ = get_parameter("force.q_state").as_double_array();
+    force_repeat_ = get_parameter("force.repeat").as_int();
+    force_freq_ = get_parameter("force.freq").as_double();
+    force_low_ = get_parameter("force.low").as_double_array();
+    force_high_ = get_parameter("force.high").as_double_array();
+    ik_repeat_ = get_parameter("ik.repeat").as_int();
+    ik_start_ = get_parameter("ik.start").as_double_array();
+    ik_end_ = get_parameter("ik.end").as_double_array();
+  }
 
 };
 
