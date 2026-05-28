@@ -10,7 +10,7 @@ TEST_CASE("Basic usage of JointTrajectory class", "[JointTrajectory]")
 {
 
     // Radius Matrix
-    const double ra = 0.0025; // splay
+    const double ra = 0.0075; // splay
     const double rb = 0.0025; // mcp
     const double rc = 0.0025; // pip/dip
 
@@ -20,7 +20,6 @@ TEST_CASE("Basic usage of JointTrajectory class", "[JointTrajectory]")
 
 
     // Structure Matrix
-    const double r11 = ra * 3.5;
     const double r1 = 8 * 0.001;
     //const double r2 = 8 * 0.001;
     const double r3 = 4.5 * 0.001;
@@ -31,8 +30,9 @@ TEST_CASE("Basic usage of JointTrajectory class", "[JointTrajectory]")
     //const double r8 = 4.5 * 0.001;
     const double r9 = 9 * 0.001;
     //const double r10 = 9 * 0.001;
+     const double r11 = 0.02625;
 
-    const arma::mat St = {{r11, -r3, r1}, //splay joint
+    const arma::mat St = {{-r11, r3, -r1}, //splay joint
     {0, -r7, -r5},                       //mcp joint
     {0, 0, -r9}};                       // pip/dip joint
 
@@ -168,10 +168,10 @@ TEST_CASE("Basic usage of JointTrajectory class", "[JointTrajectory]")
         REQUIRE(q_motor_list.size() == 200);
         REQUIRE_THAT(q_motor_list[0](0), Catch::Matchers::WithinAbs(q_motor_list.back()(0), 1e-3));
 
-        for (auto q_motor: q_motor_list) {
-            auto q_joint = transforms.motor_to_joint(q_motor);
-            std::cout << "q_joint: " << q_joint.t() << std::endl;
-        }
+        // for (auto q_motor: q_motor_list) {
+        //     auto q_joint = transforms.motor_to_joint(q_motor);
+        //     std::cout << "q_joint: " << q_joint.t() << std::endl;
+        // }
 
         REQUIRE_THROWS(generator.generate_chirp_velocity(1, 100, 5.0, 10.0, 2.0, 0.8));
     }

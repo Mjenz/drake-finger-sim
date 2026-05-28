@@ -33,6 +33,8 @@ std::vector<arma::vec> JointTrajectory::generate_sinusoid(
     q_motor_list.push_back(_transforms.joint_to_motor(q_joint));
   }
 
+  q_motor_list.pop_back();  // Remove the last point to ensure we don't repeat the first point of the next cycle
+
     //std::cout << "Generated " << q_motor_list.size() << " motor positions." << std::endl;
 
   return q_motor_list;
@@ -169,9 +171,9 @@ std::vector<arma::vec> JointTrajectory::generate_force_step(
 
     t_motor_list.push_back(t_motor);
 
-    // std::cout << "force_value: " << force_value.t() << std::endl;
-    // std::cout << "t_joint: " << t_joint.t() << std::endl;
-    // std::cout << "t_motor: " << t_motor_list.back().t() << std::endl;
+    std::cout << "force_value: " << force_value.t() << std::endl;
+    std::cout << "t_joint: " << t_joint.t() << std::endl;
+    std::cout << "t_motor: " << t_motor_list.back().t() << std::endl;
   }
 
   return t_motor_list;
