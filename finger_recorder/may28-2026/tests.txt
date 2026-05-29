@@ -1,0 +1,85 @@
+test 0:
+chirp:
+      joint: 1
+      amp: 0.1
+      freq_init: .1
+      freq_final: 50.0
+      time: 8.0
+      v_offset: 0.5   # pi/4 rad
+
+test 1:
+chirp:
+      joint: 1
+      amp: 0.1
+      freq_init: .1
+      freq_final: 50.0
+      time: 8.0
+      v_offset: 0.5   # pi/4 rad
+
+
+test 2:
+ chirp_velocity:
+      joint: 1
+      vel_amp: 3.0
+      freq_init: 1.0
+      freq_final: 30.0
+      time: 8.0
+      start_pos: [0.0, 0.5, 0.0]  # pi/4 rad
+
+test 3:
+ chirp_velocity:
+      joint: 1
+      vel_amp: 3.0
+      freq_init: 1.0
+      freq_final: 30.0
+      time: 8.0
+      start_pos: [0.0, 0.5, 0.0]  # pi/4 rad
+
+test 4:
+    chirp:
+      joint: 1
+      amp: 0.1
+      freq_init: .1
+      freq_final: 30.0
+      time: 8.0
+      v_offset: 0.5   # pi/4 rad
+
+test 5:
+    chirp:
+      joint: 1
+      amp: 0.1
+      freq_init: .1
+      freq_final: 30.0
+      time: 8.0
+      v_offset: 0.5   # pi/4 rad
+
+test 6:
+    chirp:
+      joint: 1
+      amp: 0.1
+      freq_init: 30.00
+      freq_final: 60.0
+      time: 8.0
+      v_offset: 0.5   # pi/4 rad
+
+test 7:
+
+    chirp:
+      joint: 1
+      amp: 0.1
+      freq_init: 30.00
+      freq_final: 60.0
+      time: 8.0
+      v_offset: 0.5   # pi/4 rad
+
+test 8:
+    # Linear move demo parameters
+    linear:
+      start_loc: [0.0, 0.0, .8]
+      end_loc: [0.0, 0.0, 1.3]
+
+test 9:
+    # Linear move demo parameters
+    linear:
+      start_loc: [0.0, 0.0, .8]
+      end_loc: [0.0, 0.0, 1.3]
