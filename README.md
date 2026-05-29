@@ -1,12 +1,14 @@
-# drake-finger-sim
+# robotic-finger
 * RDS Speedster team
 * Spring 2026
 
 ## Description
 This project controls a 3DOF robotic finger designed by the speedster team for Robot Design Studio 2026 at Northwestern University as the capstone for our undergraduate degrees in Mechanical Engineering.
 
-## Video
-https://github.com/user-attachments/assets/51fc3995-e88c-482a-a0bd-d43471b91480
+This repository can run a set of benchmarking demos as well as whackamole demos in both simulation and on hardware.
+
+## Drake Simulation Demo
+https://github.com/user-attachments/assets/2588c1cb-209b-4e95-b6a7-d67c1fb5cd49
 
 ## Installation Instructions
 1.  Create a new ros2 workspace named ~/rds_ws and a src folder
@@ -54,12 +56,30 @@ Drake must be installed on system as well as on drake_ros built locally in a ove
 
 
 ## Launchfiles
-1. `ros2 launch finger_control hardware_control.launch.xml` - Launches the finger control with hardware bridge
-2. `ros2 launch finger_control simulation_control.launch.xml` - Launches the finger control with simulation bridge
-3. `ros2 launch finger_vision vision.launch.xml` - Launches the computer vision algorithm
-4. `ros2 launch finger_simulation 4barsim.launch.xml` - Launches dynamic simulation of finger including closed loop 4 bar
-5. `ros2 launch finger_simulation basic_fingersim.launch.xml` - Launches kinematic simulation of finger
-6. `ros2 launch finger_description fingerviz.launch.xml` - Launches kinematic visualization of finger in RVIZ
 
-## AI usage
-AI was used to get the 'basic_' version up and runnning, provided with examples from the official drake_ros github repo.
+### Simulation
+1. `ros2 launch finger_simulation 4barsim.launch.xml` - Drake simulation with 4-bar linkage kinematics and Rviz2 visualization
+2. `ros2 launch finger_simulation basic_fingersim.launch.xml` - Drake simulation with 4-bar linkage kinematics, Rviz2, and a fingertip tf frame
+
+### Visualization
+3. `ros2 launch finger_description fingerviz.launch.xml` - URDF visualization in Rviz2 with interactive joint_state_publisher_gui for manual joint control
+
+### Control
+4. `ros2 launch finger_control demo.launch.xml` - Full control stack running a selectable demo trajectory. Args:
+   - `bridge:=simulation|hardware` (default: `simulation`)
+   - `demo:=force_step|sinusoidal|linear|ik|cartesian_ik|chirp|chirp_velocity|none` (default: `none`)
+   - `use_rviz:=true|false` (default: `true`)
+   - `record:=true|false` (default: `false`)
+5. `ros2 launch finger_control 3d_waypoint_tracking.launch.xml` - Full control stack with simulation vision for 3D waypoint tracking. Args:
+   - `bridge:=simulation|hardware` (default: `simulation`)
+   - `use_rviz:=true|false` (default: `true`)
+   - `record:=true|false` (default: `false`)
+6. `ros2 launch finger_control pixel_whackamole.launch.xml` - Whack-a-mole game using pixel-based vision and the whackamole server. Args:
+   - `bridge:=simulation|hardware` (default: `simulation`)
+   - `use_rviz:=true|false` (default: `true`)
+   - `record:=true|false` (default: `false`)
+
+### Vision
+7. `ros2 launch finger_vision vision.launch.xml` - RealSense camera + AprilTag detection + finger_vision node + Rviz2
+8. `ros2 launch finger_vision2 vision2.launch.xml` - RealSense camera + AprilTag detection + finger_vision2 node + Rviz2
+

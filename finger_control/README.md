@@ -5,12 +5,27 @@
 ## Description
 This packages serves as the high level controller controlling where the finger goes.
 
-## Launch files
-1. `hardware_control.launch.xml` - Launch the finger control with hardware bridge
-2. `simulation_control.launch.xml` - Launch the finger control with simulation bridge
+## Launchfiles
+| Launch file | Description |
+|---|---|
+| `ros2 launch finger_control demo.launch.xml` | Full control stack running a selectable demo trajectory. Args: `bridge:=simulation\|hardware`, `demo:=force_step\|sinusoidal\|linear\|ik\|cartesian_ik\|chirp\|chirp_velocity\|none`, `use_rviz:=true\|false`, `record:=true\|false` |
+| `ros2 launch finger_control 3d_waypoint_tracking.launch.xml` | Full control stack with simulation vision for 3D waypoint tracking. Args: `bridge:=simulation\|hardware`, `use_rviz:=true\|false`, `record:=true\|false` |
+| `ros2 launch finger_control pixel_whackamole.launch.xml` | Whack-a-mole game using pixel-based vision and the whackamole server. Args: `bridge:=simulation\|hardware`, `use_rviz:=true\|false`, `record:=true\|false` |
+
+## Config files
+| File | Description |
+|---|---|
+| `config/demo.yaml` | Demo trajectory parameters (joint targets, amplitudes, frequencies, etc.) |
+
+## Nodes
+| Executable | Description |
+|---|---|
+| `demo` | Runs a single configurable demo trajectory selected by the `demo` parameter (linear, sinusoidal, force_step, ik, cartesian_ik, chirp, chirp_velocity). |
+| `control` | High-level whack-a-mole control node. Polls the TF tree for a `goal` frame, sends cartesian IK moves when a new goal appears, and publishes `/completed` once the fingertip arrives. |
 
 ## Helpful commands
-1. To cancel a repeating action from the command line use the following service call:
+| Command | Description |
+|---|---|
+| `ros2 service call /<action_name>/_action/cancel_goal action_msgs/srv/CancelGoal` | Cancel an action call that is being repeated (sinusoidal or force_step). |
 
-    ros2 service call /<action_name>/_action/cancel_goal action_msgs/srv/CancelGoal
 

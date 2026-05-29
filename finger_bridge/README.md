@@ -3,7 +3,13 @@
 * Spring 2026
 
 ## Description
-This package serves as middleman shuffling commands between the simulation/harware and ros as well as feedback. 
+This package serves as a bridge between the simulation/harware. 
+
+## Nodes
+| Executable | Description |
+|---|---|
+| `hardware_bridge` | Bridges commands and feedback between ROS2 and the Teensy over serial. Receives trajectory commands via `/send_command`, forwards them to the Teensy, and publishes motor feedback parsed from serial responses. |
+| `simulation_bridge` | Bridges commands and feedback between ROS2 and the Drake simulation. Steps through a received command trajectory at 100 Hz and publishes motor positions and activity state back to the ROS2 graph. |
 
 ## Design
 
@@ -12,7 +18,7 @@ This package serves as middleman shuffling commands between the simulation/harwa
 #### Data command from laptop to teensy
 This command is used to send a position trajectory for the teensy to send to motors.
 
-    <command_type = D> <data_length: int, 1-1000> <repeat = 1 | 0>
+    <command_type = D> <data_length: int, 1-1000> <repeat = 1 | 0> <mode = P | V | T>
 
     <mcp_splay_position: float> <mcp_flex_position: float> <pip_flex_position: float>
 
@@ -39,10 +45,10 @@ This command will stop the teensy safely.
 #### General feedback from teensy to laptop
 The teensy is constantly sending these commands back to the laptop.
 
-    <mcp_splay_position: float> <mcp_flex_position: float> <pip_flex_position: float> <active_bool: 1.0 | 0.0 >
+    <mcp_splay_position: float> <mcp_flex_position: float> <pip_flex_position: float> <commanded_mcp_splay_position: float> <commanded_mcp_flex_position: float> <commanded_pip_flex_position: float> <active_bool: 1.0 | 0.0 >
 
 #### Message recieved feedback from teensy to laptop
 This message is response for a message recieved from the laptop.
 
-    <success_bool >
+    <success_bool>
 

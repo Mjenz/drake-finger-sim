@@ -5,7 +5,13 @@
 ## Description
 This package contains asynchronous services to plan movements and create trajectories for the finger motors to follow.
 
-## Launch files
+## Config files
+| File | Description |
+|---|---|
+| `config/movement_config.yaml` | Motion planning parameters: `max_velocity`, `max_acceleration`, `relative_gnd_height`. |
 
-## Design
+## Nodes
+| Executable | Description |
+|---|---|
+| `finger_planner` | Action server for cartesian, linear, sinusoidal, force step, chirp, and chirp velocity movements; generates motor position commands; manages execution via `/send_command`, `/start_command`, `/stop_command`. |
 
