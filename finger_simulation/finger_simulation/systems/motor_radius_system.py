@@ -36,7 +36,7 @@ class MotorTorqueToForceSystem(LeafSystem):
         """Convert motor torque to tendon forces."""
         torque = self.torque_input_port.Eval(context)
 
-        # torque[0] /= -3.5
+        torque[0] *= 3.5
         output.SetFromVector(self.Ra @ torque)
 
     def _calc_linear(self, context, output):

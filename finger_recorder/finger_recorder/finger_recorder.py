@@ -1,13 +1,23 @@
 """
-Records finger motor data from ROS2 topics to an MCAP bag file.
+Records finger motor and joint data from ROS2 topics to a timestamped MCAP bag file.
 
 SUBSCRIBERS:
-  + motor_pos_actual_feedback (finger_interfaces/msg/MotorFeedback)
-    - Actual motor positions
-  + motor_pos_setpoint_feedback (finger_interfaces/msg/MotorFeedback)
-    - Setpoint motor positions
-  + motor_pos_activity_feedback (finger_interfaces/msg/MotorActivity)
-    - Motor activity state
+  + /motor_pos_actual_feedback (finger_interfaces/msg/MotorFeedback)
+    - Actual motor positions from the bridge
+  + /motor_pos_setpoint_feedback (finger_interfaces/msg/MotorFeedback)
+    - Commanded motor positions from the bridge
+  + /motor_pos_drake_feedback (finger_interfaces/msg/MotorFeedback)
+    - Motor positions reported directly by Drake
+  + /joint_torque_drake_feedback (finger_interfaces/msg/MotorFeedback)
+    - Joint torques reported by Drake
+  + /motor_pos_activity_feedback (finger_interfaces/msg/MotorActivity)
+    - Motor activity state (1.0 = executing, 0.0 = idle)
+  + /setpoint/joint_feedback (finger_interfaces/msg/MotorFeedback)
+    - Joint positions from the setpoint kinematic simulation
+  + /actual/joint_feedback (finger_interfaces/msg/MotorFeedback)
+    - Joint positions from the actual kinematic simulation
+  + /drake/joint_feedback (finger_interfaces/msg/MotorFeedback)
+    - Joint positions from the Drake dynamic simulation
 """
 
 from datetime import datetime

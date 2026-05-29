@@ -44,6 +44,7 @@ target_link_libraries(simulation_vision
   ${tf2_ros_TARGETS}
   ${ARMADILLO_LIBRARIES}
   fingerlib::fingerlib
+  ${std_msgs_TARGETS}
 )
 
 target_link_libraries(pixel_vision
@@ -76,7 +77,7 @@ install(
 )
 
 install(
-  DIRECTORY launch config
+  DIRECTORY launch config meshes
   DESTINATION share/${PROJECT_NAME}
 )
 

@@ -45,7 +45,7 @@ from rclpy.node import Node
 
 from sensor_msgs.msg import CameraInfo, Image
 
-from tf2_ros import StaticTransformBroadcaster
+from tf2_ros import adcaster
 from tf2_ros import TransformBroadcaster, TransformStamped
 
 
@@ -165,7 +165,7 @@ class FingerVision(Node):
 
         # create transform broadcaster
         self.broadcaster = TransformBroadcaster(self)
-        self.static_broadcaster = StaticTransformBroadcaster(self)
+        self.static_broadcaster = adcaster(self)
 
         # create timer to update transforms at constant freq
         period = 1.0/20.0

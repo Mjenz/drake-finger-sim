@@ -1,14 +1,27 @@
 /// \file
-/// \brief Simulates face detections by publishing random bounding boxes and visualization markers at randomized intervals.
+/// \brief Simulates a vision system for 3D waypoint tracking. Generates random
+///        reachable goal positions by uniformly sampling joint space, computing
+///        FK with Transformer, and publishing the resulting Cartesian target.
+///        A new goal is generated either when /completed is received or after a
+///        normally-distributed number of timer ticks (~100 ticks, σ=10).
 ///
-/// Face detections are generated with uniformly distributed image coordinates and
-/// normally distributed depth. Markers are published in base_link frame at the
-/// projected 3D position of the detection.
+/// PARAMETERS:
+///   + ra / rb / rc (double) - Motor radius diagonal entries for Ra matrix
+///   + r1 / r3 / r5 / r7 / r9 / r11 (double) - Tendon routing matrix St entries
+///   + slist (double[24]) - Screw axes for 4 joints (row-major, 6 values each)
+///   + joint_min / joint_max (double[3]) - Joint limits for splay, MCP, PIP/DIP (rad)
+///   + M (double[16]) - Home configuration SE(3) matrix (row-major)
+///   + four_bar_lengths (double[4]) - 4-bar linkage link lengths (m)
+///
+/// SUBSCRIBERS:
+///   + /completed (std_msgs/msg/Empty) - Triggers generation of the next random goal
 ///
 /// PUBLISHERS:
-///   + ~/detections (ryan_interfaces/msg/Detection) - Publishes bounding boxes, image size, and depth of detected faces
-///   + ~/bbox_marker (visualization_msgs/msg/Marker) - Publishes a 3D sphere marker for the current detection in base_link
-///   + /tf (tf2_msgs/msg/TFMessage) - Broadcasts goal frame relative to speedster_finger/base_link
+///   + /goals (visualization_msgs/msg/Marker) - Mole mesh marker at the current goal position in base_frame
+///
+/// TF BROADCASTERS:
+///   + speedster_finger/distal_phalanx → fingertip (static) - Fingertip offset from distal phalanx
+///   + base_frame → goal (dynamic)                          - Current goal position in base_frame
 
 #include <chrono>
 #include <cmath>
@@ -16,10 +29,12 @@
 #include <random>
 #include <armadillo>
 
+#include "std_msgs/msg/empty.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "tf2_ros/transform_broadcaster.h"
 #include "visualization_msgs/msg/marker.hpp"
+#include "tf2_ros/static_transform_broadcaster.h"
 
 #include "fingerlib/transformer.hpp"
 
@@ -36,6 +51,12 @@ std::mt19937 & get_random()
     return mt;
 }
 
+/// \brief The state of the goal completion
+enum CompletedState {
+  WAITING,
+  DONE
+};
+
 /// \brief Publishes random points for the finger to go towards
 class SimulationVision : public rclcpp::Node
 {
@@ -47,9 +68,31 @@ public:
     count_(0)
   {
     declare_and_get_finger_params();
-    
+
+
+    // create static transformer for phone transform and publish
+    tf_static_broadcaster_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(this);
+
+    fingertip_tf_.header.stamp = now();
+    fingertip_tf_.header.frame_id = "speedster_finger/distal_phalanx";
+    fingertip_tf_.child_frame_id = "fingertip";
+    // fingertip_tf_.transform.translation.x = M_(0, 3);
+    // fingertip_tf_.transform.translation.y = M_(1, 3);
+    // fingertip_tf_.transform.translation.z = M_(2, 3);
+    fingertip_tf_.transform.translation.x = -0.003;
+    fingertip_tf_.transform.translation.y = 0.035;
+    fingertip_tf_.transform.translation.z = -0.004; 
+    tf_static_broadcaster_->sendTransform(fingertip_tf_);
+
     // create transformer
     transforms_ = std::make_shared<Transformer>(Ra_, St_, slist_, M_, four_bar_lengths_, joint_min_, joint_max_);
+
+    // create subscriptions
+    auto completed_sub_cb =
+      [this](std_msgs::msg::Empty::SharedPtr) -> void {
+        state_ = CompletedState::DONE;
+      };
+    completed_sub_ = create_subscription<std_msgs::msg::Empty>("/completed", 10, completed_sub_cb);
 
     // create publishers
     auto qos = rclcpp::QoS(10).transient_local();
@@ -60,7 +103,7 @@ public:
     splay_d_ = std::uniform_real_distribution<>(joint_min_.at(0) + 0.1, joint_max_.at(0) - 0.1);
     mcpflex_d_ = std::uniform_real_distribution<>(joint_min_.at(1) + 0.1, joint_max_.at(1) - 0.1);
     pipflex_d_ = std::uniform_real_distribution<>(joint_min_.at(2) + 0.1, joint_max_.at(2) - 0.1);
-    norm_count_d_ = std::normal_distribution<>(10.0, 5.0);
+    norm_count_d_ = std::normal_distribution<>(100.0, 10.0);
 
     // init max count
     max_count_ =  std::max(1, static_cast<int>(norm_count_d_(get_random())));
@@ -68,7 +111,7 @@ public:
     auto timer_callback =
       [this]()-> void {
 
-        if (count_ % max_count_ == 0)
+        if ((state_ == CompletedState::DONE) || (count_ % max_count_ == 0))
         {
             // update stored marker from new detection
             updateMarker();
@@ -76,6 +119,9 @@ public:
             // reset timer max
             max_count_ = std::max(1, static_cast<int>(norm_count_d_(get_random())));
             count_ = 0;
+
+            // reset completed state
+            state_ = CompletedState::WAITING;
         }
 
         // republish current marker and goal tf until the next detection arrives
@@ -110,7 +156,8 @@ private:
 
     marker_.header.frame_id = "base_frame";
     marker_.id = 0;
-    marker_.type = visualization_msgs::msg::Marker::SPHERE;
+    marker_.type = visualization_msgs::msg::Marker::MESH_RESOURCE;
+    marker_.mesh_resource = "package://finger_vision2/meshes/mole.stl";
     marker_.action = visualization_msgs::msg::Marker::ADD;
     marker_.pose.position.x = rand_cartesian(0,3);
     marker_.pose.position.y = rand_cartesian(1,3);
@@ -122,19 +169,21 @@ private:
     marker_.pose.orientation.y = 0.0;
     marker_.pose.orientation.z = 0.0;
     marker_.pose.orientation.w = 1.0;
-    marker_.scale.x = 0.02;
-    marker_.scale.y = 0.02;
-    marker_.scale.z = 0.02;
-    marker_.color.r = 0.0f;
+    marker_.scale.x = 0.001;
+    marker_.scale.y = 0.001;
+    marker_.scale.z = 0.001;
+    marker_.color.r = 0.5f;
     marker_.color.g = 1.0f;
-    marker_.color.b = 0.0f;
+    marker_.color.b = 0.1f;
     marker_.color.a = 0.8f;
     has_marker_ = true;
 }
   int id_;
   bool has_marker_;
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_pub_;
+  rclcpp::Subscription<std_msgs::msg::Empty>::SharedPtr completed_sub_;
   std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
+  std::shared_ptr<tf2_ros::StaticTransformBroadcaster> tf_static_broadcaster_;
   rclcpp::TimerBase::SharedPtr timer_;
   std::uniform_real_distribution<> splay_d_;
   std::uniform_real_distribution<> mcpflex_d_;
@@ -142,8 +191,10 @@ private:
   std::normal_distribution<> norm_count_d_;
   visualization_msgs::msg::Marker marker_;
   geometry_msgs::msg::TransformStamped goal_tf_;
+  geometry_msgs::msg::TransformStamped fingertip_tf_;
   int count_;
   int max_count_;
+  CompletedState state_;
 
   double ra_, rb_, rc_;
   double r1_, r3_, r5_, r7_, r9_, r11_;
@@ -177,7 +228,7 @@ private:
     declare_parameter("joint_max", std::vector<double>{0.55, 1.572, 1.572});
     declare_parameter("M", std::vector<double>{
         1, 0, 0, 0,
-        0, 1, 0, 0.16,
+        0, 1, 0, 0.15,
         0, 0, 1, 0,
         0, 0, 0, 1});
     declare_parameter("four_bar_lengths", std::vector<double>{

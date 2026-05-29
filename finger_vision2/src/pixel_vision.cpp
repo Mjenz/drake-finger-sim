@@ -1,14 +1,25 @@
 /// \file
-/// \brief Simulates face detections by publishing random bounding boxes and visualization markers at randomized intervals.
+/// \brief Converts whack-a-mole target pixel coordinates into a 3D goal TF frame.
+///        Subscribes to the whackamole server's target and hit topics, transforms
+///        pixel coordinates to metric space using a configurable phone camera TF,
+///        and republishes the goal as a visualization marker and TF at 10 Hz.
+///        State machine: NONE → NEW (on target) → PUBLISHING → NONE (on hit).
 ///
-/// Face detections are generated with uniformly distributed image coordinates and
-/// normally distributed depth. Markers are published in base_link frame at the
-/// projected 3D position of the detection.
+/// PARAMETERS:
+///   + tf.trans.x / .y / .z (double) - Phone frame translation relative to base_frame (m)
+///   + tf.rot.roll / .pitch / .yaw (double) - Phone frame rotation relative to base_frame (rad)
+///   + px_per_meter (double) - Pixel density of the phone camera image (px/m)
+///
+/// SUBSCRIBERS:
+///   + /whackamole/target (whackamole_interfaces/msg/Point) - Pixel coordinates of the new target from the whackamole server
+///   + /whackamole/hit_ms (std_msgs/msg/Int32) - Hit confirmation signal; resets goal state
 ///
 /// PUBLISHERS:
-///   + ~/detections (ryan_interfaces/msg/Detection) - Publishes bounding boxes, image size, and depth of detected faces
-///   + ~/bbox_marker (visualization_msgs/msg/Marker) - Publishes a 3D sphere marker for the current detection in base_link
-///   + /tf (tf2_msgs/msg/TFMessage) - Broadcasts goal frame relative to speedster_finger/base_link
+///   + /goals (visualization_msgs/msg/Marker) - Sphere marker at the current goal position in phone_frame
+///
+/// TF BROADCASTERS:
+///   + phone_frame → base_frame (static) - Camera-to-robot calibration transform
+///   + phone_frame → goal (dynamic)      - Current goal position in phone_frame
 
 #include <chrono>
 #include <cmath>

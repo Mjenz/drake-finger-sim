@@ -619,7 +619,7 @@ private:
     declare_parameter("joint_max", std::vector<double>{0.55, 1.572, 1.572});
     declare_parameter("M", std::vector<double>{
         1, 0, 0, 0,
-        0, 1, 0, 0.16,
+        0, 1, 0, 0.15,
         0, 0, 1, 0,
         0, 0, 0, 1});
     declare_parameter("four_bar_lengths", std::vector<double>{
