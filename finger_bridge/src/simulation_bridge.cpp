@@ -183,7 +183,7 @@ public:
         setpoint_feedback_pub_->publish(setpoint_feedback_);
         activity_feedback_pub_->publish(activity_feedback_);
       };
-    timer_ = this->create_wall_timer(10ms, command_sender_timer_callback);
+    timer_ = this->create_wall_timer(1.25ms, command_sender_timer_callback);
   }
 
 private:

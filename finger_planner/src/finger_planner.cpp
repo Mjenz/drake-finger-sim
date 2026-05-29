@@ -96,7 +96,7 @@ public:
     // create transformer class
     transforms_ = std::make_shared<Transformer>(Ra_, St_, slist_, M_, four_bar_lengths_, joint_min_,
       joint_max_);
-    generator_ = std::make_shared<JointTrajectory>(*transforms_, 100, gnd_height_);
+    generator_ = std::make_shared<JointTrajectory>(*transforms_, 800, gnd_height_);
 
     auto motor_pos_actual_sub_callback =
       [this](finger_interfaces::msg::MotorFeedback::UniquePtr msg) -> void {
@@ -205,7 +205,7 @@ public:
             }
           } catch (std::runtime_error & e) {
             RCLCPP_ERROR_STREAM(get_logger(),
-            "Goal request REJECTED because waypoint is outside of joint limits!!");
+            "Oh no, ik failed to converge");
             return rclcpp_action::GoalResponse::REJECT;
           }
 
@@ -501,7 +501,7 @@ public:
           // print request
           RCLCPP_INFO_STREAM(get_logger(), "Received chirp velocity goal request for joint" <<
             goal->joint << " with amp " << goal->amp << ", freq " << goal->freq_init << 
-            ", freq_final " << goal->freq_final << ", time " << goal->time << ", and v_shift " << goal->start_pos);
+            ", freq_final " << goal->freq_final << ", time " << goal->time << ", and start_pos " << goal->start_pos.at(goal->joint));
 
           // accept request
           return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
@@ -949,12 +949,13 @@ private:
       goal_handle, chirp_velocity_result_,
       [this](const auto & goal) {
         if (((goal.joint == 0) || (goal.joint == 1) || (goal.joint == 2))) {
-          RCLCPP_INFO_STREAM(get_logger(), "Received chirp goal request for joint" <<
-            goal.joint << " with amp " << goal.amp << ", freq " << goal.freq_init << 
-            ", freq_final " << goal.freq_final << ", time " << goal.time << ", and v_shift " << goal.start_pos);
+          RCLCPP_INFO_STREAM(get_logger(), "Received chirp goal request for joint" << goal.joint << " with amp " << goal.amp << ", freq " << goal.freq_init << 
+            ", freq_final " << goal.freq_final << ", time " << goal.time << ", and v_shift " << "\nstart_pos <" <<
+            goal.start_pos.at(0) << ", "<< goal.start_pos.at(1) << ", " << goal.start_pos.at(2) << ">");
 
           // accept request
-          return generator_->generate_chirp_velocity(goal.joint, goal.amp, goal.freq_init, goal.freq_final, goal.time, goal.start_pos);
+          return generator_->generate_chirp_velocity(goal.joint, goal.amp, goal.freq_init, goal.freq_final, goal.time, goal.start_pos.at(goal.joint));
+
         } else {
           RCLCPP_INFO(get_logger(), "Goal request REJECTED because joint is not 0, 1, or 2.");
 

@@ -4,24 +4,31 @@
     sinusoidal:
       repeat: 1
       joint: 2
-      amp: 0.7854
-      freq: 1.0
-      v_offset: 0.7854
+      amp: 0.2
+      freq: 5.0
+      v_offset: 1.0
 
     # Chirp demo parameters
     chirp:
       joint: 1
-      amp: 0.2
+      amp: 0.1
+      freq_init: 30.00
+      freq_final: 60.0
+      time: 8.0
+      v_offset: 0.5   # pi/4 rad
+
+    chirp_velocity:
+      joint: 1
+      vel_amp: 3.0
       freq_init: 1.0
-      freq_final: 10.0
-      time: 10.0
-      v_offset: 0.7854   # pi/4 rad
-      start_pos: 0.7854  # pi/4 rad
+      freq_final: 30.0
+      time: 8.0
+      start_pos: [0.0, 0.5, 0.0]  # pi/4 rad
 
     # Linear move demo parameters
     linear:
-      start_loc: [0.0, 0.0, 0.0]
-      end_loc: [0.0, 0.0, 1.57]
+      start_loc: [0.0, 0.0, .8]
+      end_loc: [0.0, 0.0, 1.3]
 
     # Force step demo parameters
     force:

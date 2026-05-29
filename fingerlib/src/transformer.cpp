@@ -89,10 +89,11 @@ arma::mat Transformer::get_jacobian_body(const arma::vec & q_joint)
 // Will still use FK from modern robotics but just drop orientation
 // might need to modify jacobian to make it coordinate not twist based..., should work fine using space frame though
 // update: yeah had to switch the jacobian to be "coordinate" based (frame at e-e with space orientation)
-arma::vec Transformer::end_effector_to_joint(const arma::vec & q_end_effector)
+arma::vec Transformer::end_effector_to_joint(const arma::vec & q_end_effector, double tolerance)
 {
   constexpr int max_iter = 200;
-  constexpr double ev = 1e-3; // position error tolerance
+  double ev = tolerance; // position error tolerance
+  std::cout << "e-e goal:\n" << q_end_effector << std::endl;
 
   arma::vec thetalist = {0, 0.5, 0.5}; // initial guess for joint angles
   int i = 0;
@@ -137,7 +138,8 @@ arma::vec Transformer::end_effector_to_joint(const arma::vec & q_end_effector)
 
   // throw error if IK did not converge
   if (err) {
-    std::cout << "e-e goal: " << q_end_effector << std::endl;
+    std::cout << "e-e goal:\n" << q_end_effector << std::endl;
+    std::cout << "ik did not converge" << std::endl;
     throw std::runtime_error("IK did not converge");
   }
 

@@ -4,7 +4,7 @@ float32 amp         # The amplitude of the chirp (in radians)
 float32 freq_init   # The initial frequency of the chirp (in Hz)
 float32 freq_final  # The final frequency of the chirp (in Hz)
 float32 time        # The duration of the chirp (in seconds)
-float32 start_pos   # The starting position of the chirp (in radians)
+float32[] start_pos   # The starting position of the chirp (in radians)
 ---
 int32 success
 ---

@@ -9,7 +9,7 @@ TEST_CASE("Basic usage of Transformer class", "[Transformer]")
 {
 
     // Radius Matrix
-    const double ra = 0.0025; // splay
+    const double ra = 0.0075; // splay
     const double rb = 0.0025; // mcp
     const double rc = 0.0025; // pip/dip
 
@@ -31,9 +31,9 @@ TEST_CASE("Basic usage of Transformer class", "[Transformer]")
     const double r9 = 9 * 0.001;
     //const double r10 = 9 * 0.001;
 
-    const arma::mat St = {{r11, -r3, -r1}, //splay joint
-    {0, r7, r5},                       //mcp joint
-    {0, 0, r9}};                       // pip/dip joint
+    const arma::mat St = {{-r11, r3, -r1}, //splay joint
+    {0, -r7, -r5},                       //mcp joint
+    {0, 0, -r9}};                       // pip/dip joint
 
     // screw axes (x = joint, y = finger, z = up) (origin is on splay joint)
     const std::vector<arma::vec6> slist = {
@@ -43,12 +43,12 @@ TEST_CASE("Basic usage of Transformer class", "[Transformer]")
     arma::vec6({-1, 0, 0, 0, 0, 0.11836})
     };
 
-    const arma::vec joint_min = {-0.2, -0.2, 0};
-    const arma::vec joint_max = {0.2, 1.572, 1.572};
+    const arma::vec joint_min = {-0.55, -0.1, -0.1};
+    const arma::vec joint_max = {0.55, 1.572, 1.572};
 
     // very simple from onshape
     const arma::mat44 M = {{1, 0, 0, 0},
-    {0, 1, 0, 0.16},
+    {0, 1, 0, 0.15},
     {0, 0, 1, 0},
     {0, 0, 0, 1}};
 
@@ -142,19 +142,28 @@ TEST_CASE("Basic usage of Transformer class", "[Transformer]")
 
     SECTION("FK")
     {
-        arma::vec q_joint = {0.1, 0.5, 1.5};
+        arma::vec q_joint = {0.0464823, 0.226506, 0.513363};
+        // arma::vec q_joint = transforms.motor_to_joint{q_motor};
 
-        auto q_ee = transforms.joint_to_end_effector(q_joint);
+        arma::mat44 q_ee = transforms.joint_to_end_effector(q_joint);
 
-        auto ee_pos = q_ee.submat(0, 3, 2, 3);
+        arma::vec ee_pos = q_ee.submat(0, 3, 2, 3);
 
-        //std::cout << ee_pos << std::endl;
+        // REQUIRE(ee_pos(0) == 0);
+        // REQUIRE(ee_pos(1) == 0);
+        // REQUIRE(ee_pos(2) == 0);
+        arma::vec q_joint_ik = transforms.end_effector_to_joint(ee_pos);
 
-        auto q_joint_ik = transforms.end_effector_to_joint(ee_pos);
+        std::cout << "ee_pos" << std::endl;
+        std::cout << ee_pos << std::endl;
 
-        //std::cout << q_joint_ik << std::endl;
+        std::cout << "q_joint_ik" << std::endl;
+        std::cout << q_joint_ik << std::endl;
 
 
+        REQUIRE_THAT(q_joint_ik(0), Catch::Matchers::WithinAbs(q_joint(0), 1e-3));
+        REQUIRE_THAT(q_joint_ik(1), Catch::Matchers::WithinAbs(q_joint(1), 1e-3));
+        REQUIRE_THAT(q_joint_ik(2), Catch::Matchers::WithinAbs(q_joint(2), 1e-3));
     }
 
 }

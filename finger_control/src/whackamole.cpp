@@ -57,7 +57,7 @@ public:
     goal_tf_.transform.translation.y = 0.0;
     goal_tf_.transform.translation.z = 0.0;
 
-    send_linear_goal({0.0, 0.1, 0.1});
+    send_linear_goal({0.0, 0.5, 0.5});
 
     // init frame names
     fromFrameRel_ = "base_frame";
@@ -101,7 +101,7 @@ public:
 
             // just the goal
             send_cartesian_goal({goal});
-            send_linear_goal({0.0, 0.025, 1.25});
+            // send_linear_goal({0.0, 0.025, 1.25});
             // send_cartesian_goal({above_goal});
             // send_cartesian_goal({above_goal, goal});
             // send_cartesian_goal({goal, above_goal});

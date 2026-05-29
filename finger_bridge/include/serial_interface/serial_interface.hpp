@@ -9,6 +9,8 @@
 #include <vector>
 #include <armadillo>
 #include "serial/serial.h"
+#include <sstream>
+#include <iomanip>
 
 /// \brief State variable monitoring the feedback status of a message sent. State is NO_STATUS until feedback recieved
 enum MessageStatus

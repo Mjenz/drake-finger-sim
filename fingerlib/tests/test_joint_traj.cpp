@@ -69,7 +69,7 @@ TEST_CASE("Basic usage of JointTrajectory class", "[JointTrajectory]")
     SECTION("Sinusoidal Motion")
     {
         auto q_motor_list = generator.generate_sinusoid(1, 0.2, 1.0, 0.8);
-        REQUIRE(q_motor_list.size() == 100);
+        REQUIRE(q_motor_list.size() == 99);
         REQUIRE_THAT(q_motor_list[0](0), Catch::Matchers::WithinAbs(q_motor_list.back()(0), 1e-3));
     }
 

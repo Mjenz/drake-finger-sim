@@ -40,9 +40,9 @@ public:
 
       for (auto i = 0; i < 10; i++) {
         send_linear_goal(end_joint_loc, start_joint_loc);
-        rclcpp::sleep_for(500ms);
+        rclcpp::sleep_for(250ms);
         send_linear_goal(start_joint_loc, end_joint_loc);
-        rclcpp::sleep_for(500ms);
+        rclcpp::sleep_for(250ms);
       }
     }
 
@@ -112,7 +112,9 @@ public:
     else if (demo_ == "chirp_velocity") {
       RCLCPP_INFO(get_logger(), "Running chirp velocity demo...");
 
-      send_chirp_velocity_goal(chirp_joint_, chirp_amp_, chirp_freq_init_, chirp_freq_final_, chirp_time_, chirp_start_pos_);
+      std::vector<float> start_pos(chirp_velocity_start_pos_.begin(), chirp_velocity_start_pos_.end());
+
+      send_chirp_velocity_goal(chirp_velocity_joint_, chirp_velocity_vel_amp_, chirp_velocity_freq_init_, chirp_velocity_freq_final_, chirp_velocity_time_, start_pos);
     }
 
   }
@@ -130,7 +132,12 @@ private:
   double chirp_freq_final_;
   double chirp_time_;
   double chirp_v_offset_;
-  double chirp_start_pos_;
+  int chirp_velocity_joint_;
+  double chirp_velocity_vel_amp_;
+  double chirp_velocity_freq_init_;
+  double chirp_velocity_freq_final_;
+  double chirp_velocity_time_;
+  std::vector<double> chirp_velocity_start_pos_;
   std::vector<double> linear_start_loc_;
   std::vector<double> linear_end_loc_;
   double force_freq_;
@@ -164,26 +171,41 @@ private:
     param_desc.description = "The vertical offset (in radians) for sinusoidal demo.";
     declare_parameter("sinusoidal.v_offset", 0.0, param_desc);
 
-    param_desc.description = "The joint to oscillate for chirp demos.";
+    param_desc.description = "The joint to oscillate for chirp demo.";
     declare_parameter("chirp.joint", 0, param_desc);
 
-    param_desc.description = "The amplitude to oscillate at for chirp demos (rad).";
+    param_desc.description = "The amplitude to oscillate at for chirp demo (rad).";
     declare_parameter("chirp.amp", 0.0, param_desc);
 
-    param_desc.description = "The initial frequency for chirp demos (Hz).";
+    param_desc.description = "The initial frequency for chirp demo (Hz).";
     declare_parameter("chirp.freq_init", 0.0, param_desc);
 
-    param_desc.description = "The final frequency for chirp demos (Hz).";
+    param_desc.description = "The final frequency for chirp demo (Hz).";
     declare_parameter("chirp.freq_final", 0.0, param_desc);
 
-    param_desc.description = "The length of time for the chirp demos in seconds.";
+    param_desc.description = "The length of time for the chirp demo in seconds.";
     declare_parameter("chirp.time", 0.0, param_desc);
 
     param_desc.description = "The vertical offset for chirp demo (in radians).";
     declare_parameter("chirp.v_offset", 0.0, param_desc);
 
+    param_desc.description = "The joint to oscillate for velocity chirp demo.";
+    declare_parameter("chirp_velocity.joint", 0, param_desc);
+
+    param_desc.description = "The amplitude to oscillate at for velocity chirp demo (rad).";
+    declare_parameter("chirp_velocity.vel_amp", 0.0, param_desc);
+
+    param_desc.description = "The initial frequency for velocity chirp demo (Hz).";
+    declare_parameter("chirp_velocity.freq_init", 0.0, param_desc);
+
+    param_desc.description = "The final frequency for velocity chirp demo (Hz).";
+    declare_parameter("chirp_velocity.freq_final", 0.0, param_desc);
+
+    param_desc.description = "The length of time for the chirp velocity demo in seconds.";
+    declare_parameter("chirp_velocity.time", 0.0, param_desc);
+
     param_desc.description = "The starting position for chirp velocity demo (in radians).";
-    declare_parameter("chirp.start_pos", 0.0, param_desc);
+    declare_parameter("chirp_velocity.start_pos", std::vector<double>{0.0, 0.0, 0.0}, param_desc);
 
     param_desc.description = "The start position in joint space for linear move demo <splay, mcp, pipdip> in radians.";
     declare_parameter("linear.start_loc", std::vector<double>{0.0, 0.0, 0.0}, param_desc);
@@ -227,7 +249,12 @@ private:
     chirp_freq_final_ = get_parameter("chirp.freq_final").as_double();
     chirp_time_ = get_parameter("chirp.time").as_double();
     chirp_v_offset_ = get_parameter("chirp.v_offset").as_double();
-    chirp_start_pos_ = get_parameter("chirp.start_pos").as_double();
+    chirp_velocity_joint_ = get_parameter("chirp_velocity.joint").as_int();
+    chirp_velocity_vel_amp_ = get_parameter("chirp_velocity.vel_amp").as_double();
+    chirp_velocity_freq_init_ = get_parameter("chirp_velocity.freq_init").as_double();
+    chirp_velocity_freq_final_ = get_parameter("chirp_velocity.freq_final").as_double();
+    chirp_velocity_time_ = get_parameter("chirp_velocity.time").as_double();
+    chirp_velocity_start_pos_ = get_parameter("chirp_velocity.start_pos").as_double_array();
     linear_start_loc_ = get_parameter("linear.start_loc").as_double_array();
     linear_end_loc_ = get_parameter("linear.end_loc").as_double_array();
     force_q_state_ = get_parameter("force.q_state").as_double_array();

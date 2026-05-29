@@ -52,7 +52,7 @@ public:
 
     transforms_ = std::make_shared<Transformer>(Ra_, St_, slist_, M_, four_bar_lengths_,
       joint_min_, joint_max_);
-    generator_ = std::make_shared<JointTrajectory>(*transforms_, 100, gnd_height_);
+    generator_ = std::make_shared<JointTrajectory>(*transforms_, 800, gnd_height_);
 
     wait_for_drake_heartbeat();
 
@@ -227,8 +227,8 @@ protected:
       arma::vec joint_pos = transforms_->motor_to_joint(motor_pos);
       arma::mat44 cartesian = transforms_->joint_to_end_effector(joint_pos);
       RCLCPP_INFO_STREAM(get_logger(), "motor_pos: " << motor_pos.at(0) << " " << motor_pos.at(1) << " " << motor_pos.at(2));
-      RCLCPP_INFO_STREAM(get_logger(), "joint_pos: " << cartesian(0) << " " << cartesian(1) << " " << cartesian(2));
-      RCLCPP_INFO_STREAM(get_logger(), "generated point: " << cartesian(0, 3) << " " << cartesian(1, 3) << " " << cartesian(2, 3));
+      RCLCPP_INFO_STREAM(get_logger(), "joint_pos: " << joint_pos(0) << " " << joint_pos(1) << " " << joint_pos(2));
+      RCLCPP_INFO_STREAM(get_logger(), "starting cartesian point: " << cartesian(0, 3) << " " << cartesian(1, 3) << " " << cartesian(2, 3));
       // add the current position in cartesian coordinates
       goal_msg.x.push_back(cartesian(0, 3));
       goal_msg.y.push_back(cartesian(1, 3));
@@ -497,8 +497,11 @@ protected:
     RCLCPP_INFO(get_logger(), "Goal completed");
   }
 
-  void send_chirp_velocity_goal(int joint, float amp, float freq_init, float freq_final, float time, float start_pos)
+  void send_chirp_velocity_goal(int joint, float amp, float freq_init, float freq_final, float time, std::vector<float> start_pos)
   {
+    // send the start pos
+    send_linear_goal(start_pos);
+    
     auto goal_msg = ChirpVelocity::Goal();
     goal_msg.joint = joint;
     goal_msg.amp = amp;
