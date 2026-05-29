@@ -93,7 +93,6 @@ arma::vec Transformer::end_effector_to_joint(const arma::vec & q_end_effector, d
 {
   constexpr int max_iter = 200;
   double ev = tolerance; // position error tolerance
-  std::cout << "e-e goal:\n" << q_end_effector << std::endl;
 
   arma::vec thetalist = {0, 0.5, 0.5}; // initial guess for joint angles
   int i = 0;

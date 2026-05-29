@@ -1,0 +1,172 @@
+[control-6] [INFO] [1780090909.743101797] [finger_whackamole]: motor_pos: -0.747981 0.10407 -3.24084
+[control-6] [INFO] [1780090909.743162350] [finger_whackamole]: joint_pos: 0.213709 0.155892 0.571699
+[control-6] [INFO] [1780090909.743181348] [finger_whackamole]: starting cartesian point: -0.0247399 0.113997 -0.0658289
+[control-6] [INFO] [1780090909.743226466] [finger_whackamole]: Sending goal
+[finger_planner-5] [INFO] [1780090909.743457995] [finger_planner]: Received cartesian goal request with length 2 and waypoints:
+[finger_planner-5] [INFO] [1780090909.743542295] [finger_planner]: waypoint 0: (-0.0247399, 0.113997, -0.0658289)
+[finger_planner-5] e-e goal:
+[finger_planner-5]   -0.0247
+[finger_planner-5]    0.1140
+[finger_planner-5]   -0.0658
+[finger_planner-5] 
+[finger_planner-5] ik did not converge
+[finger_planner-5] [ERROR] [1780090909.745130940] [finger_planner]: Oh no, ik failed to converge
+[control-6] [ERROR] [1780090909.745275794] [finger_whackamole]: Goal was rejected by server
+[control-6] [INFO] [1780090909.745310226] [finger_whackamole]: Goal rejected
+
+
+ntrol-6] [INFO] [1780091090.716762908] [finger_whackamole]: motor_pos: -1.1344 -0.0325777 -3.2186
+[control-6] [INFO] [1780091090.716825837] [finger_whackamole]: joint_pos: 0.324115 0.342213 0.301764
+[control-6] [INFO] [1780091090.716840084] [finger_whackamole]: starting cartesian point: -0.0400635 0.11925 -0.0695037
+[control-6] [INFO] [1780091090.716855520] [finger_whackamole]: Sending goal
+[finger_planner-5] [INFO] [1780091090.717025308] [finger_planner]: Received cartesian goal request with length 2 and waypoints:
+[finger_planner-5] [INFO] [1780091090.717076363] [finger_planner]: waypoint 0: (-0.0400635, 0.11925, -0.0695037)
+[finger_planner-5] e-e goal:
+[finger_planner-5]   -0.0401
+[finger_planner-5]    0.1192
+[finger_planner-5]   -0.0695
+[finger_planner-5] 
+[finger_planner-5] ik did not converge
+[finger_planner-5] [ERROR] [1780091090.718638886] [finger_planner]: Oh no, ik failed to converge
+
+[control-6] [INFO] [1780091215.946014890] [finger_whackamole]: motor_pos: -1.07432 -0.177771 -3.20617
+[control-6] [INFO] [1780091215.946074256] [finger_whackamole]: joint_pos: 0.306947 0.405709 0.257129
+[control-6] [INFO] [1780091215.946095628] [finger_whackamole]: starting cartesian point: -0.0376376 0.118744 -0.0732403
+[control-6] [INFO] [1780091215.946115813] [finger_whackamole]: Sending goal
+[finger_planner-5] [INFO] [1780091215.946272540] [finger_planner]: Received cartesian goal request with length 2 and waypoints:
+[finger_planner-5] [INFO] [1780091215.946323595] [finger_planner]: waypoint 0: (-0.0376376, 0.118744, -0.0732403)
+[finger_planner-5] e-e goal:
+[finger_planner-5]   -0.0376
+[finger_planner-5]    0.1187
+[finger_planner-5]   -0.0732
+[finger_planner-5] 
+[finger_planner-5] ik did not converge
+[finger_planner-5] [ERROR] [1780091215.947557225] [finger_planner]: Oh no, ik failed to converge
+
+
+[control-6] [INFO] [1780091460.286709967] [finger_whackamole]: motor_pos: -1.11852 -0.0289312 -3.06262
+[control-6] [INFO] [1780091460.286761022] [finger_whackamole]: joint_pos: 0.319579 0.335651 0.268302
+[control-6] [INFO] [1780091460.286776458] [finger_whackamole]: starting cartesian point: -0.0404197 0.122143 -0.0664115
+[control-6] [INFO] [1780091460.286793080] [finger_whackamole]: Sending goal
+[finger_planner-5] [INFO] [1780091460.286984239] [finger_planner]: Received cartesian goal request with length 2 and waypoints:
+[finger_planner-5] [INFO] [1780091460.287035294] [finger_planner]: waypoint 0: (-0.0404197, 0.122143, -0.0664115)
+[finger_planner-5] e-e goal:
+[finger_planner-5]   -0.0404
+[finger_planner-5]    0.1221
+[finger_planner-5]   -0.0664
+[finger_planner-5] 
+[finger_planner-5] ik did not converge
+[finger_planner-5] [ERROR] [1780091460.288942138] [finger_planner]: Oh no, ik failed to converge
+[control-6] [ERROR] [1780091460.289067995] [finger_whackamole]: Goal was rejected by server
+[control-6] [INFO] [1780091460.289086992] [finger_whackamole]: Goal rejected
+
+rol-6] [INFO] [1780091608.112583489] [finger_whackamole]: Goal rejected
+[control-6] [INFO] [1780091608.410480944] [finger_whackamole]: motor_pos: 1.45175 -1.24394 -0.319628
+[control-6] [INFO] [1780091608.410543873] [finger_whackamole]: joint_pos: -0.414785 0.276291 0.211891
+[control-6] [INFO] [1780091608.410559308] [finger_whackamole]: starting cartesian point: 0.0547632 0.124368 -0.0552011
+[control-6] [INFO] [1780091608.410577118] [finger_whackamole]: Sending goal
+[finger_planner-5] [INFO] [1780091608.410737407] [finger_planner]: Received cartesian goal request with length 2 and waypoints:
+[finger_planner-5] [INFO] [1780091608.410790836] [finger_planner]: waypoint 0: (0.0547632, 0.124368, -0.0552011)
+[finger_planner-5] e-e goal:
+[finger_planner-5]    0.0548
+[finger_planner-5]    0.1244
+[finger_planner-5]   -0.0552
+[finger_planner-5] 
+[finger_planner-5] ik did not converge
+[finger_planner-5] [ERROR] [1780091608.412383039] [finger_planner]: Oh no, ik failed to converge
+[control-6] [ERROR] [1780091608.412508895] [finger_whackamole]: Goal was rejected by server
+
+6] [INFO] [1780091934.724174334] [finger_whackamole]: Goal rejected
+[control-6] [INFO] [1780091935.021940432] [finger_whackamole]: motor_pos: 1.28131 -1.44045 -1.22254
+[control-6] [INFO] [1780091935.022000986] [finger_whackamole]: joint_pos: -0.366087 0.434165 0.279081
+[control-6] [INFO] [1780091935.022018795] [finger_whackamole]: starting cartesian point: 0.0432257 0.112752 -0.0776959
+[control-6] [INFO] [1780091935.022036605] [finger_whackamole]: Sending goal
+[finger_planner-5] [INFO] [1780091935.022177897] [finger_planner]: Received cartesian goal request with length 2 and waypoints:
+[finger_planner-5] [INFO] [1780091935.022240825] [finger_planner]: waypoint 0: (0.0432258, 0.112752, -0.0776959)
+[finger_planner-5] e-e goal:
+[finger_planner-5]    0.0432
+[finger_planner-5]    0.1128
+[finger_planner-5]   -0.0777
+[finger_planner-5] 
+[finger_planner-5] ik did not converge
+[finger_planner-5] [ERROR] [1780091935.023960067] [finger_planner]: Oh no, ik failed to converge
+[control-6] [ERROR] [1780091935.024098983] [finger_whackamole]: Goal was rejected by server
+
+
+]: motor_pos: -0.394282 -0.282444 -2.64555
+[control-6] [INFO] [1780092185.852559197] [finger_whackamole]: joint_pos: 0.112652 0.269565 0.395125
+[control-6] [INFO] [1780092185.852572258] [finger_whackamole]: starting cartesian point: -0.0138996 0.122862 -0.0678481
+[control-6] [INFO] [1780092185.852585318] [finger_whackamole]: Sending goal
+[finger_planner-5] [INFO] [1780092185.852770541] [finger_planner]: Received cartesian goal request with length 2 and waypoints:
+[finger_planner-5] [INFO] [1780092185.852816846] [finger_planner]: waypoint 0: (-0.0138996, 0.122862, -0.0678481)
+[finger_planner-5] e-e goal:
+[finger_planner-5]   -0.0139
+[finger_planner-5]    0.1229
+[finger_planner-5]   -0.0678
+[finger_planner-5] 
+[finger_planner-5] ik did not converge
+[finger_planner-5] [ERROR] [1780092185.854652446] [finger_planner]: Oh no, ik failed to converge
+[control-6] [ERROR] [1780092185.854791363] [finger_whackamole]: Goal was rejected by server
+[control-6] [INFO] [1780092185.854811547] [finger_whackamole]: Goal rejected
+^C[WARNING] [launch]: user interrupted with ctrl-c (SIGINT)
+
+
+ Goal rejected
+[control-6] [INFO] [1780092489.471551517] [finger_whackamole]: motor_pos: 0.302216 -0.632689 -1.71471
+[control-6] [INFO] [1780092489.471603759] [finger_whackamole]: joint_pos: -0.0863475 0.265147 0.317376
+[control-6] [INFO] [1780092489.471620381] [finger_whackamole]: starting cartesian point: 0.0111892 0.129261 -0.0621266
+[control-6] [INFO] [1780092489.471638191] [finger_whackamole]: Sending goal
+[finger_planner-5] [INFO] [1780092489.471771171] [finger_planner]: Received cartesian goal request with length 2 and waypoints:
+[finger_planner-5] [INFO] [1780092489.471812727] [finger_planner]: waypoint 0: (0.0111892, 0.129261, -0.0621266)
+[finger_planner-5] e-e goal:
+[finger_planner-5]    0.0112
+[finger_planner-5]    0.1293
+[finger_planner-5]   -0.0621
+[finger_planner-5] 
+[finger_planner-5] ik did not converge
+[finger_planner-5] [ERROR] [1780092489.473554526] [finger_planner]: Oh no, ik failed to converge
+[control-6] [ERROR] [1780092489.473694629] [finger_whackamole]: Goal was rejected by server
+[control-6] [INFO] [1780092489.473725500] [finger_whackamole]: Goal rejected
+
+motor_pos: 1.23282 -1.15262 -0.687744
+[control-6] [INFO] [1780092529.382163445] [finger_whackamole]: joint_pos: -0.352234 0.288112 0.248037
+[control-6] [INFO] [1780092529.382178880] [finger_whackamole]: starting cartesian point: 0.0458868 0.124841 -0.0594982
+[control-6] [INFO] [1780092529.382195503] [finger_whackamole]: Sending goal
+[finger_planner-5] [INFO] [1780092529.382451964] [finger_planner]: Received cartesian goal request with length 2 and waypoints:
+[finger_planner-5] [INFO] [1780092529.382510143] [finger_planner]: waypoint 0: (0.0458868, 0.124841, -0.0594982)
+[finger_planner-5] e-e goal:
+[finger_planner-5]    0.0459
+[finger_planner-5]    0.1248
+[finger_planner-5]   -0.0595
+[finger_planner-5] 
+[finger_planner-5] ik did not converge
+[finger_planner-5] [ERROR] [1780092529.383786512] [finger_planner]: Oh no, ik failed to converge
+[control-6] [ERROR] [1780092529.383961048] [finger_whackamole]: Goal was rejected by server
+[control-6] [INFO] [1780092529.383987169] [finger_whackamole]: Goal rejected
+
+
+ Goal rejected
+[control-5] [INFO] [1780093030.900257525] [finger_whackamole]: motor_pos: 0.728459 -0.990567 -1.72907
+[control-5] [INFO] [1780093030.900301456] [finger_whackamole]: joint_pos: -0.208131 0.342184 0.361139
+[control-5] [INFO] [1780093030.900313329] [finger_whackamole]: starting cartesian point: 0.0250475 0.118602 -0.0733545
+[control-5] [INFO] [1780093030.900326390] [finger_whackamole]: Sending goal
+[finger_planner-4] [INFO] [1780093030.900442747] [finger_planner]: Received cartesian goal request with length 2 and waypoints:
+[finger_planner-4] [INFO] [1780093030.900483116] [finger_planner]: waypoint 0: (0.0250475, 0.118602, -0.0733545)
+[finger_planner-4] e-e goal:
+[finger_planner-4]    0.0250
+[finger_planner-4]    0.1186
+[finger_planner-4]   -0.0734
+[finger_planner-4] 
+[finger_planner-4] ik did not converge
+
+t code: 1
+[control-6] [INFO] [1780094439.213637008] [finger_whackamole]: Goal completed
+[finger_planner-5] [INFO] [1780094439.313412494] [finger_planner]: Stopping action...
+[finger_planner-5] [INFO] [1780094439.313464736] [finger_planner]: Action stopped.
+[control-6]   -0.2513
+[control-6]    0.6310
+[control-6]   -0.0174
+[control-6] 
+[control-6] terminate called after throwing an instance of 'std::runtime_error'
+[control-6]   what():  Output outside of joint limits
+[ERROR] [control-6]: process has died [pid 323238, exit code -6, cmd '/home/michael-jenz/rds_ws/install/finger_control/lib/finger_control/control --ros-args --params-file /home/michael-jenz/rds_ws/install/finger_description/share/finger_description/config/finger.yaml --params-file /home/michael-jenz/rds_ws/install/finger_planner/share/finger_planner/config/movement_config.yaml'].
