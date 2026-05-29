@@ -1,13 +1,28 @@
 /// \file
-/// \brief Runs high level control coordinating perception and movement commands.
-///        Waits for the Drake simulation heartbeat, then dispatches cartesian,
-///        sinusoidal, and linear trajectory goals to the finger planner.
+/// \brief High-level whack-a-mole control node. Polls the TF tree for a "goal"
+///        frame published by the vision system, sends a cartesian IK move when
+///        a new goal appears, and publishes /completed once the fingertip
+///        arrives at the goal position. Operates as a state machine at 10 Hz:
+///        IDLE → START_MOVE → MOVING → IDLE.
+///
+/// SUBSCRIBES:
+///   + /motor_pos_actual_feedback (finger_interfaces/msg/MotorFeedback) - Used to derive current joint state for relative moves
+///
+/// PUBLISHERS:
+///   + /completed (std_msgs/msg/Empty) - Published once the fingertip reaches the goal
+///
+/// TF LISTENERS:
+///   + base_frame → goal       - Target position published by the vision system
+///   + base_frame → fingertip  - Current fingertip position for arrival detection
 ///
 /// CLIENTS:
 ///   + /heartbeat (std_srvs/srv/Empty) - Blocks startup until the Drake simulation is ready
 ///   + /cartesian_move (finger_interfaces/action/Cartesian) - Sends end-effector waypoint goals
 ///   + /sinusoidal_move (finger_interfaces/action/Sinusoidal) - Sends sinusoidal joint trajectory goals
 ///   + /linear_move (finger_interfaces/action/Linear) - Sends linear joint-space trajectory goals
+///   + /force_step_move (finger_interfaces/action/Force) - Sends alternating force step goals
+///   + /chirp_move (finger_interfaces/action/Chirp) - Sends frequency-sweep position chirp goals
+///   + /chirp_velocity_move (finger_interfaces/action/ChirpVelocity) - Sends frequency-sweep velocity chirp goals
 
 #include <chrono>
 #include <memory>
@@ -17,7 +32,7 @@
 #include <armadillo>
 
 #include "finger_control/finger_control_base.hpp"
-
+#include "std_msgs/msg/empty.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "tf2/exceptions.hpp"
 #include "tf2_ros/transform_listener.h"
@@ -29,6 +44,7 @@ using namespace std::chrono_literals;
 /// \brief State variable for moving to published goal points
 enum FingerState
 {
+  START_MOVE,
   MOVING,
   IDLE,
 };
@@ -42,12 +58,14 @@ public:
   FingerWhackamole()
   : FingerControlBase("finger_whackamole"),
     finger_state_ (FingerState::IDLE),
-    goal_count_ (0),
-    thresh_ (0.001)
+    goal_count_ (0)
   {
     // init tf2
     tf_buffer_ = std::make_unique<tf2_ros::Buffer>(get_clock());
     tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+
+    // init publisher
+    completed_pub_ = create_publisher<std_msgs::msg::Empty>("/completed", 10);
 
     // init tfs
     prev_tf_.transform.translation.x = 0.0;
@@ -56,13 +74,16 @@ public:
     goal_tf_.transform.translation.x = 0.0;
     goal_tf_.transform.translation.y = 0.0;
     goal_tf_.transform.translation.z = 0.0;
+    fingertip_tf_.transform.translation.x = 0.0;
+    fingertip_tf_.transform.translation.y = 0.0;
+    fingertip_tf_.transform.translation.z = 0.0;
 
     send_linear_goal({0.0, 0.5, 0.5});
 
     // init frame names
-    fromFrameRel_ = "base_frame";
-    toFrameRel_ = "goal";
-    // toFrameRel_ = "phone_frame";
+    base_frame_ = "base_frame";
+    goal_frame_ = "goal";
+    fingertip_frame_ = "fingertip";
 
     // define timer callback and init
     auto hyper_alg_timer_cb =
@@ -70,27 +91,27 @@ public:
 
         switch (finger_state_) {
 
-          case FingerState::IDLE:
+          case FingerState::IDLE: {
 
             // listen for new goal positions
             try {
               goal_tf_ = tf_buffer_->lookupTransform(
-                fromFrameRel_, toFrameRel_,
+                base_frame_, goal_frame_,
                 tf2::TimePointZero);
               
               if (!similar_tfs(goal_tf_, prev_tf_)) {
                 // if successful switch state and move finger to this location
-                finger_state_ = FingerState::MOVING;
+                finger_state_ = FingerState::START_MOVE;
               }
 
             } catch (const tf2::TransformException & ex) {
               RCLCPP_INFO_ONCE(get_logger(), "Could not transform %s to %s: %s",
-                fromFrameRel_.c_str(), toFrameRel_.c_str(), ex.what());
+                base_frame_.c_str(), goal_frame_.c_str(), ex.what());
               return;
             }
             break;
-            
-          case FingerState::MOVING:
+          }
+          case FingerState::START_MOVE: {
             // convert to vector
             std::vector<float> above_goal = {float(goal_tf_.transform.translation.x),
                                                float(goal_tf_.transform.translation.y),
@@ -111,10 +132,36 @@ public:
             prev_tf_ = goal_tf_;
 
             // update state
-            finger_state_ = FingerState::IDLE;
+            finger_state_ = FingerState::MOVING;
 
             break;
-          }        
+            }
+          case FingerState::MOVING: {
+            // listen if finger has reached goal position
+            try {
+              fingertip_tf_ = tf_buffer_->lookupTransform(
+                base_frame_, fingertip_frame_,
+                tf2::TimePointZero);
+              
+              if (!similar_tfs(fingertip_tf_, goal_tf_)) {
+                std_msgs::msg::Empty msg;
+                completed_pub_->publish(msg);
+
+                // if successful switch state and wait for next goal
+                finger_state_ = FingerState::IDLE;
+              }
+
+            } catch (const tf2::TransformException & ex) {
+              RCLCPP_INFO(get_logger(), "Could not transform %s to %s: %s",
+                fingertip_frame_.c_str(), goal_frame_.c_str(), ex.what());
+              return;
+            }
+            // finger_state_ = FingerState::IDLE;
+
+            
+            break;
+          }
+        }        
       };
       
     timer_cb_group_ = create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
@@ -126,25 +173,27 @@ public:
 private:
   FingerState finger_state_;
   int goal_count_;
-  float thresh_;
 
-  std::string fromFrameRel_;
-  std::string toFrameRel_;
+  std::string base_frame_;
+  std::string goal_frame_;
+  std::string fingertip_frame_;
   geometry_msgs::msg::TransformStamped goal_tf_;
   geometry_msgs::msg::TransformStamped prev_tf_;
+  geometry_msgs::msg::TransformStamped fingertip_tf_;
 
+  rclcpp::Publisher<std_msgs::msg::Empty>::SharedPtr completed_pub_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
   std::unique_ptr<tf2_ros::Buffer> tf_buffer_;
   rclcpp::TimerBase::SharedPtr timer_;
   rclcpp::CallbackGroup::SharedPtr timer_cb_group_;
 
-  bool similar_tfs(geometry_msgs::msg::TransformStamped tf1, geometry_msgs::msg::TransformStamped tf2) {
+  bool similar_tfs(geometry_msgs::msg::TransformStamped tf1, geometry_msgs::msg::TransformStamped tf2, double thresh = 0.001) {
 
     auto x_diff = fabs(tf1.transform.translation.x - tf2.transform.translation.x);
     auto y_diff = fabs(tf1.transform.translation.y - tf2.transform.translation.y);
     auto z_diff = fabs(tf1.transform.translation.z - tf2.transform.translation.z);
 
-    if ((x_diff > thresh_) || (y_diff > thresh_) || (z_diff > thresh_)) {
+    if ((x_diff > thresh) || (y_diff > thresh) || (z_diff > thresh)) {
       return false;
     } else {
       return true;

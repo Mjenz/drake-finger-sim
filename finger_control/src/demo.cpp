@@ -1,13 +1,29 @@
 /// \file
-/// \brief Runs high level control coordinating perception and movement commands.
-///        Waits for the Drake simulation heartbeat, then dispatches cartesian,
-///        sinusoidal, and linear trajectory goals to the finger planner.
+/// \brief Runs a configurable single-shot demo trajectory. Waits for the Drake
+///        heartbeat, then executes one trajectory selected by the `demo` parameter:
+///        linear, sinusoidal, force_step, ik, cartesian_ik, chirp, or chirp_velocity.
+///
+/// PARAMETERS:
+///   + demo (string) - Trajectory type to run: linear | sinusoidal | force_step | ik | cartesian_ik | chirp | chirp_velocity
+///   + linear.start_loc / linear.end_loc (double[3]) - Joint-space start and end positions (rad)
+///   + sinusoidal.joint / .amp / .freq / .v_offset / .repeat - Sinusoidal oscillation parameters
+///   + chirp.joint / .amp / .freq_init / .freq_final / .time / .v_offset - Chirp sweep parameters
+///   + chirp_velocity.joint / .vel_amp / .freq_init / .freq_final / .time / .start_pos - Velocity chirp parameters
+///   + force.q_state / .low / .high / .freq / .repeat - Force step parameters
+///   + ik.start / ik.end (double[3]) - Cartesian start/end positions for IK demos (m)
+///   + ik.repeat (int) - Number of back-and-forth repetitions for ik demos
+///
+/// SUBSCRIBES:
+///   + /motor_pos_actual_feedback (finger_interfaces/msg/MotorFeedback) - Used to derive current joint state for relative moves
 ///
 /// CLIENTS:
 ///   + /heartbeat (std_srvs/srv/Empty) - Blocks startup until the Drake simulation is ready
 ///   + /cartesian_move (finger_interfaces/action/Cartesian) - Sends end-effector waypoint goals
 ///   + /sinusoidal_move (finger_interfaces/action/Sinusoidal) - Sends sinusoidal joint trajectory goals
 ///   + /linear_move (finger_interfaces/action/Linear) - Sends linear joint-space trajectory goals
+///   + /force_step_move (finger_interfaces/action/Force) - Sends alternating force step goals
+///   + /chirp_move (finger_interfaces/action/Chirp) - Sends frequency-sweep position chirp goals
+///   + /chirp_velocity_move (finger_interfaces/action/ChirpVelocity) - Sends frequency-sweep velocity chirp goals
 
 #include <chrono>
 #include <memory>

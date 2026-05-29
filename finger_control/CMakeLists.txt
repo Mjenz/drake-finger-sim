@@ -55,6 +55,8 @@ target_link_libraries(control
   ${tf2_ros_TARGETS}
   ${tf2_TARGETS}
   ${geometry_msgs_TARGETS}
+  ${std_msgs_TARGETS}
+
 )
 
 target_link_libraries(demo
