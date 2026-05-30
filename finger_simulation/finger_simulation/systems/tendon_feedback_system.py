@@ -28,7 +28,7 @@ class TendonFeedbackSystem(LeafSystem):
         self.St_inv = np.linalg.inv(self.St)
 
         # Tendon stiffness vector
-        self.k = 60.0
+        self.k = 80.0
 
         # init size of input and output
         nq = 5  # five link positions

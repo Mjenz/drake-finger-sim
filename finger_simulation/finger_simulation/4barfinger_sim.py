@@ -334,8 +334,8 @@ def main():
 
     # add pre-defined, parametrized systems
     pid_controller = fingersim.builder.AddSystem(
-        PidController(kp=np.array([10000, 10000, 10000]),
-                      ki=np.ones(3) * 0.0,
+        PidController(kp=np.array([1000, 1000, 1000]),
+                      ki=np.array([1, 1, 1]),
                       kd=np.array([50, 50, 50])
     ))
     fingersim.pid_controller = pid_controller

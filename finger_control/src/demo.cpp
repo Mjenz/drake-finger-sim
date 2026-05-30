@@ -133,6 +133,29 @@ public:
       send_chirp_velocity_goal(chirp_velocity_joint_, chirp_velocity_vel_amp_, chirp_velocity_freq_init_, chirp_velocity_freq_final_, chirp_velocity_time_, start_pos);
     }
 
+    else if (demo_ == "lissajous") {
+      RCLCPP_INFO(get_logger(), "Running lissajous demo...");
+      auto lissajous = 
+        [this](float y_offset = 0.07, float z_offset = -0.07, float f = 0.5, int hz = 800) {
+
+            auto n = int(hz / f);
+            RCLCPP_INFO_STREAM(get_logger(), n);
+            std::vector<std::vector<float>> points;
+            for (int i = 0; i <= n; ++i) {
+                float t = static_cast<float>(i) /  n;
+                points.push_back({
+                    0.0f, // motion is in the x plane
+                    1.5f * std::sinf(2 * M_PI * t) / 100.0f + y_offset,
+                    1.5f * std::sinf(2 * M_PI* 2 * t + 3 * M_PI / 4) / 100.0f + z_offset - 0.0161f
+                });
+            }
+            return points;
+        };
+      for (auto i = 0; i < 20; i++) {
+        send_cartesian_goal(lissajous());
+        rclcpp::sleep_for(500ms);
+      }
+      }
   }
 
 private:

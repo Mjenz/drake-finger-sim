@@ -22,6 +22,7 @@
     <choice value="cartesian_ik" />
     <choice value="chirp"/>
     <choice value="chirp_velocity"/>
+    <choice value="lissajous"/>
     <choice value="none" />
   </arg>
 
@@ -59,6 +60,11 @@
   </node>
 
   <node pkg="finger_recorder" exec="record" if="$(eval '\'$(var record)\'==\'true\'')" output="screen"/>
+  
+  <node pkg="tf2_ros" exec="static_transform_publisher"
+       args="--x -0.004 --y 0.03 --z 0.0 --qx 0 --qy 0 --qz 0 --qw 1 --frame-id speedster_finger/distal_phalanx --child-frame-id fingertip" />
+  <node pkg="tf2_ros" exec="static_transform_publisher"
+       args="--x -0.004 --y 0.03 --z 0.0 --qx 0 --qy 0 --qz 0 --qw 1 --frame-id setpoint_finger/distal_phalanx --child-frame-id setpoint_fingertip" />
 
 
 </launch>
