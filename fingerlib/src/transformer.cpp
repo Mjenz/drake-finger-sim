@@ -92,57 +92,69 @@ arma::mat Transformer::get_jacobian_body(const arma::vec & q_joint)
 arma::vec Transformer::end_effector_to_joint(const arma::vec & q_end_effector, double tolerance)
 {
   constexpr int max_iter = 200;
-  double ev = tolerance; // position error tolerance
+  constexpr double max_step = 0.1;
+  constexpr double lambda = 1e-3;
 
-  arma::vec thetalist = {0, 0.5, 0.5}; // initial guess for joint angles
-  int i = 0;
-  bool err = true;
-  constexpr double max_step = 0.1; // radians
+  const std::vector<arma::vec> seeds = {
+    arma::vec({0.0, 0.5, 0.5}),
+    arma::vec({0.0, 0.0, 0.0}),
+    arma::vec({0.5, -0.5, 1.0}),
+    arma::vec({-0.5, 1.0, -0.5}),
+    arma::vec({1.0, 1.0, 1.0}),
+    arma::vec({-1.0, -1.0, -1.0}),
+  };
 
-  do {
-    const arma::vec pos_error = q_end_effector - joint_to_end_effector(thetalist).col(3).head(3);
+  auto try_ik = [&](const arma::vec & seed, arma::vec & thetalist) -> bool
+  {
+    thetalist = arma::min(arma::max(seed, _joint_min), _joint_max);
 
-    arma::mat44 T(arma::fill::eye);
-    T(arma::span(0, 2), 3) = -q_end_effector;
+    for (int i = 0; i < max_iter; ++i) {
+      const arma::vec pos_error = q_end_effector - joint_to_end_effector(thetalist).col(3).head(3);
 
-    const arma::mat Js = (mr::Adjoint(T) * get_jacobian_space(thetalist));
-    const arma::mat Js_sub = Js.submat(3, 0, 5, 2); // rows 3-5 for linear velocity, columns 0-2 for the 3 joints
+      if (arma::norm(pos_error) <= tolerance) {
+        return true;
+      }
 
-    //std::cout << "Pos error norm: " << arma::norm(pos_error) << std::endl;
+      arma::mat44 T(arma::fill::eye);
+      T(arma::span(0, 2), 3) = -q_end_effector;
 
-    arma::vec dtheta;
-    if (arma::cond(Js_sub) > 1e6) {
-        // damped least squares
-      std::cout << "Warning: Jacobian is near singular, using damped least squares" << std::endl;
-      constexpr double lambda = 1e-1;
-      dtheta = Js_sub.t() * arma::solve(Js_sub * Js_sub.t() + lambda * arma::eye(3, 3), pos_error);
-    } else {
-      dtheta = arma::pinv(Js_sub) * pos_error;
+      const arma::mat Js = mr::Adjoint(T) * get_jacobian_space(thetalist);
+      const arma::mat Js_sub = Js.submat(3, 0, 5, 2);
+
+      arma::vec dtheta;
+      if (arma::cond(Js_sub) > 1e6) {
+        std::cout << "Warning: Jacobian near singular, using damped least squares" << std::endl;
+        dtheta = Js_sub.t() * arma::solve(
+          Js_sub * Js_sub.t() + lambda * arma::eye(3, 3), pos_error);
+      } else {
+        dtheta = arma::pinv(Js_sub) * pos_error;
+      }
+
+      const double step_norm = arma::norm(dtheta);
+      if (step_norm > max_step) {
+        dtheta *= max_step / step_norm;
+      }
+
+      thetalist += dtheta;
+      thetalist = arma::min(arma::max(thetalist, _joint_min), _joint_max);
     }
 
-    const double error_norm = 4 * arma::norm(pos_error);
-    const double adaptive_step = std::min(max_step, error_norm);
+    return false;
+  };
 
-    const double step_norm = arma::norm(dtheta);
-    if (step_norm > adaptive_step) {
-      dtheta *= adaptive_step / step_norm;
+  arma::vec result;
+  for (std::size_t s = 0; s < seeds.size(); ++s) {
+    if (try_ik(seeds[s], result)) {
+      if (s > 0) {
+        std::cout << "IK converged on seed " << s << std::endl;
+      }
+      return result;
     }
-
-    thetalist += dtheta;
-    thetalist = arma::min(arma::max(thetalist, _joint_min), _joint_max);
-
-    err = arma::norm(pos_error) > ev;
-    ++i;
-  } while (err && i < max_iter);
-
-  // throw error if IK did not converge
-  if (err) {
-    std::cout << "e-e goal:\n" << q_end_effector << std::endl;
-    std::cout << "ik did not converge" << std::endl;
-    throw std::runtime_error("IK did not converge");
+    std::cout << "Seed " << s << " failed, trying next..." << std::endl;
   }
 
-  return thetalist;
+  std::cout << "e-e goal:\n" << q_end_effector << std::endl;
+  throw std::runtime_error("IK did not converge after " + std::to_string(seeds.size()) + " seeds");
 }
 
 arma::mat44 Transformer::joint_to_end_effector(const arma::vec & q_joint)

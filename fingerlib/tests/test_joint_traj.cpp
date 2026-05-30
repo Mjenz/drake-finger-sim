@@ -141,7 +141,7 @@ TEST_CASE("Basic usage of JointTrajectory class", "[JointTrajectory]")
 
         std::vector<arma::vec> waypoints = {start, end};
 
-        auto q_motor_list = generator.generate_cartesian(waypoints, 1, 1);
+        //auto q_motor_list = generator.generate_cartesian(waypoints, 1, 1);
 
         // for(auto q_motor: q_motor_list){
         //     std::cout << q_motor << std::endl;

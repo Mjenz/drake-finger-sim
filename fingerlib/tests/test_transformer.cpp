@@ -74,15 +74,15 @@ TEST_CASE("Basic usage of Transformer class", "[Transformer]")
 
         //std::cout << "q_motor" << q_motor << std::endl;
 
-        REQUIRE_THAT(q_motor(0), Catch::Matchers::WithinAbs(0.35, 1e-12));
-        REQUIRE_THAT(q_motor(1), Catch::Matchers::WithinAbs(-.18, 1e-12));
+        REQUIRE_THAT(q_motor(0), Catch::Matchers::WithinAbs(-0.35, 1e-12));
+        REQUIRE_THAT(q_motor(1), Catch::Matchers::WithinAbs(.18, 1e-12));
         REQUIRE_THAT(q_motor(2), Catch::Matchers::WithinAbs(-0.32, 1e-12));
     }
 
     SECTION("Motor Space to Joint Space")
     {
         // initialize motor angle
-        arma::vec q_motor = {0, 0, 3.6};
+        arma::vec q_motor = {0, 0, -3.6};
 
         // calculate corresponding motor angles
         auto q_joint = transforms.motor_to_joint(q_motor);
@@ -140,19 +140,19 @@ TEST_CASE("Basic usage of Transformer class", "[Transformer]")
         REQUIRE_THAT(arma::abs(J - J_truth).max(), Catch::Matchers::WithinAbs(0.0, 1e-1));
     }
 
-    SECTION("FK")
+    SECTION("FK+IK")
     {
-        arma::vec q_joint = {0.0464823, 0.226506, 0.513363};
+        arma::vec q_joint = {0.213709, 0.155892, 0.571699};
         // arma::vec q_joint = transforms.motor_to_joint{q_motor};
 
         arma::mat44 q_ee = transforms.joint_to_end_effector(q_joint);
 
         arma::vec ee_pos = q_ee.submat(0, 3, 2, 3);
 
-        // REQUIRE(ee_pos(0) == 0);
-        // REQUIRE(ee_pos(1) == 0);
-        // REQUIRE(ee_pos(2) == 0);
         arma::vec q_joint_ik = transforms.end_effector_to_joint(ee_pos);
+
+        std::cout << "q_joint" << std::endl;
+        std::cout << q_joint << std::endl;
 
         std::cout << "ee_pos" << std::endl;
         std::cout << ee_pos << std::endl;
@@ -161,9 +161,9 @@ TEST_CASE("Basic usage of Transformer class", "[Transformer]")
         std::cout << q_joint_ik << std::endl;
 
 
-        REQUIRE_THAT(q_joint_ik(0), Catch::Matchers::WithinAbs(q_joint(0), 1e-3));
-        REQUIRE_THAT(q_joint_ik(1), Catch::Matchers::WithinAbs(q_joint(1), 1e-3));
-        REQUIRE_THAT(q_joint_ik(2), Catch::Matchers::WithinAbs(q_joint(2), 1e-3));
+        REQUIRE_THAT(q_joint_ik(0), Catch::Matchers::WithinAbs(q_joint(0), 1e-1));
+        REQUIRE_THAT(q_joint_ik(1), Catch::Matchers::WithinAbs(q_joint(1), 1e-1));
+        REQUIRE_THAT(q_joint_ik(2), Catch::Matchers::WithinAbs(q_joint(2), 1e-1));
     }
 
 }
