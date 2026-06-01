@@ -2,6 +2,12 @@
 
 from finger_interfaces.msg import MotorFeedback
 
+import os
+
+import csv
+
+import glob
+
 import matplotlib.pyplot as plt
 
 import numpy as np
@@ -10,15 +16,50 @@ from rclpy.serialization import deserialize_message
 
 import rosbag2_py
 
-import glob
-
 DRAKE_JOINT_TORQUES = False
 
-DATA_FOLDER = 'src/robotic-finger/finger_recorder/bags/'
+DATA_FOLDER = 'src/robotic-finger-sim/finger_recorder/may28-2026/test9/'
 
-FILE = 'latest'
+FILE = 'finger_bag_20260528_175306_0.mcap'
 
 JOINT_LABELS = ['splay [deg]', 'mcp_flex [deg]', 'pip/dip_flex [deg]']
+
+def save_data_to_csv(data, joint_labels, output_file='plotted_data.csv'):
+    """Save the loaded data to a CSV file."""
+    # Flatten the data structure into a single dataframe-like format
+    all_times = set()
+    data_dict = {}
+    
+    for group, series_dict in data.items():
+        for series, values in series_dict.items():
+            if not values:
+                continue
+            for t, positions in values:
+                all_times.add(t)
+                for i, label in enumerate(joint_labels):
+                    key = f"{group}_{series}_{label}"
+                    if key not in data_dict:
+                        data_dict[key] = {}
+                    data_dict[key][t] = np.rad2deg(positions[i])
+    
+    if not all_times:
+        print("No data to save")
+        return
+    
+    sorted_times = sorted(all_times)
+    
+    with open(output_file, 'w', newline='') as csvfile:
+        fieldnames = ['Time (s)'] + sorted(data_dict.keys())
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        
+        for t in sorted_times:
+            row = {'Time (s)': f"{t:.6f}"}
+            for col in fieldnames[1:]:
+                row[col] = f"{data_dict[col].get(t, '')}"  # Empty string if time not in this series
+            writer.writerow(row)
+    
+    print(f"Data saved to {output_file}")
 
 if DRAKE_JOINT_TORQUES:
     TOPICS = {
@@ -65,6 +106,9 @@ if DRAKE_JOINT_TORQUES:
     for group, series_dict in data.items():
         for series, values in series_dict.items():
             print(f"  {group}/{series}: {len(values)} points")
+
+    # Save data to CSV
+    save_data_to_csv(data, JOINT_LABELS, DATA_FOLDER + 'plotted_data.csv')
 
     fig, axes = plt.subplots(len(JOINT_LABELS), len(data), figsize=(14, 8), sharex=True)
 
@@ -137,6 +181,9 @@ else:
     for group, series_dict in data.items():
         for series, values in series_dict.items():
             print(f"  {group}/{series}: {len(values)} points")
+
+    # Save data to CSV
+    save_data_to_csv(data, JOINT_LABELS, DATA_FOLDER + 'plotted_data.csv')
 
     fig, axes = plt.subplots(len(JOINT_LABELS), len(data), figsize=(14, 8), sharex=True)
 
