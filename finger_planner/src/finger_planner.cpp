@@ -99,7 +99,7 @@ public:
     // create transformer class
     transforms_ = std::make_shared<Transformer>(Ra_, St_, slist_, M_, four_bar_lengths_, joint_min_,
       joint_max_);
-    generator_ = std::make_shared<JointTrajectory>(*transforms_, 800, gnd_height_);
+    generator_ = std::make_shared<JointTrajectory>(*transforms_, 100, gnd_height_);
 
     auto motor_pos_actual_sub_callback =
       [this](finger_interfaces::msg::MotorFeedback::UniquePtr msg) -> void {
@@ -338,13 +338,13 @@ public:
 
             auto start = transforms_->joint_to_end_effector(waypoints_temp[0]);
             RCLCPP_INFO_STREAM(get_logger(),
-            "waypoint 0 in joint space: (" << start(0) << ", " << start(1) << ", " << start(2) << ")");
+            "waypoint 0 in cartesian space: (" << start(0) << ", " << start(1) << ", " << start(2) << ")");
             for(auto i = 1; i < goal->length; i++) {
               RCLCPP_INFO_STREAM(get_logger(),
               "waypoint " << i << ": (" << goal->splay.at(i) << ", " << goal->mcp.at(i) << ", " << goal->pipdip.at(i) << ")");
               auto point = transforms_->joint_to_end_effector(waypoints_temp[i]);
               RCLCPP_INFO_STREAM(get_logger(),
-                "waypoint " << i << " in joint space: (" << point(0) << ", " << point(1) << ", " << point(2) << ")");
+                "waypoint " << i << " in cartesian space: (" << point(0) << ", " << point(1) << ", " << point(2) << ")");
             }
           } catch (std::runtime_error & e) {
             RCLCPP_ERROR_STREAM(get_logger(),

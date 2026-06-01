@@ -196,6 +196,10 @@ public:
           motor_setpoint_feedback_.motor_positions = std::vector<float>{fb.at(3), fb.at(4), fb.at(5)};
           motor_activity_feedback_.active = fb.at(6);
 
+          motor_actual_feedback_.header.stamp = now();
+          motor_setpoint_feedback_.header.stamp = now();
+          motor_activity_feedback_.header.stamp = now();
+
           actual_feedback_pub_->publish(motor_actual_feedback_);
           setpoint_feedback_pub_->publish(motor_setpoint_feedback_);
           activity_feedback_pub_->publish(motor_activity_feedback_);

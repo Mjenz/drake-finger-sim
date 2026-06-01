@@ -61,7 +61,7 @@ public:
 
     transforms_ = std::make_shared<Transformer>(Ra_, St_, slist_, M_, four_bar_lengths_,
       joint_min_, joint_max_);
-    generator_ = std::make_shared<JointTrajectory>(*transforms_, 800, gnd_height_);
+    generator_ = std::make_shared<JointTrajectory>(*transforms_, 100, gnd_height_);
 
     wait_for_drake_heartbeat();
 
@@ -226,7 +226,7 @@ protected:
     
     goal_msg.length = int(waypoints.size());
     goal_msg.repeat = int(repeat);
-    
+
     // check if they provided more than just the end
     if (goal_msg.length > 1) {
       for (auto & wp : waypoints) {

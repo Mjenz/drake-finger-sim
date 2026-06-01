@@ -179,6 +179,9 @@ public:
 
         // publish same as feedback
         activity_feedback_.active = (state_ == State::READY) ? 1.0 : 0.0;
+        actual_feedback_.header.stamp = now();
+        setpoint_feedback_.header.stamp = now();
+        activity_feedback_.header.stamp = now();
         actual_feedback_pub_->publish(actual_feedback_);
         setpoint_feedback_pub_->publish(setpoint_feedback_);
         activity_feedback_pub_->publish(activity_feedback_);

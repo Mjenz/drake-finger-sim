@@ -134,6 +134,14 @@ TEST_CASE("Basic usage of JointTrajectory class", "[JointTrajectory]")
         REQUIRE_THROWS(generator_bad.generate_linear({start, end}, v_max, a_max));
     }
 
+    SECTION("Linear Step")
+    {
+        arma::vec start = {0, 0, 0};
+        arma::vec end = {0, 1.57, 1.3};
+
+        auto generator_bad = JointTrajectory{transforms, 100, -0.1};
+    }
+
     SECTION("Cartesian Waypoints")
     {
         arma::vec start = {0, 0.15, -0.05};

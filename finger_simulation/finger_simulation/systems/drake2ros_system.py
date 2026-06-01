@@ -92,6 +92,7 @@ class Drake2Ros(LeafSystem):
         vel = self.vel_input_port.Eval(context)
         msg = MotorFeedback()
         msg.motor_positions = vel.tolist()
+        msg.header.stamp = self._node.get_clock().now().to_msg()
         self._vel_pub.publish(msg)
 
     def _publish_motor_position(self, context):
@@ -99,6 +100,7 @@ class Drake2Ros(LeafSystem):
         pos = self.pos_input_port.Eval(context)
         msg = MotorFeedback()
         msg.motor_positions = pos.tolist()
+        msg.header.stamp = self._node.get_clock().now().to_msg()
         self._pos_pub.publish(msg)
 
     def _publish_joint_feedback(self, context):
@@ -106,4 +108,5 @@ class Drake2Ros(LeafSystem):
         pos = self.joint_input_port.Eval(context)
         msg = MotorFeedback()
         msg.motor_positions = pos.tolist()[0:3]  # take first 3
+        msg.header.stamp = self._node.get_clock().now().to_msg()
         self._joint_pub.publish(msg)

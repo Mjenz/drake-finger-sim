@@ -47,4 +47,5 @@ class Drake2Ros(LeafSystem):
         pos = self.pos_input_port.Eval(context)
         msg = MotorFeedback()
         msg.motor_positions = pos.tolist()[0:3]  # take first 3
+        msg.header.stamp = self._node.get_clock().now().to_msg()
         self._joint_pub.publish(msg)

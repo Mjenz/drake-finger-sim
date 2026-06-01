@@ -74,7 +74,7 @@ public:
     if (demo_ == "linear") {
       RCLCPP_INFO(get_logger(), "Running linear joint movement demo...");
 
-      send_linear_goal(0, linear_waypoints_); // go to start
+      // send_linear_goal(0, linear_waypoints_); // go to start
 
       send_linear_goal(linear_repeat_, linear_waypoints_);
     }
@@ -82,7 +82,7 @@ public:
     else if (demo_ == "linear_step") {
       RCLCPP_INFO(get_logger(), "Running linear step joint movement demo...");
 
-      send_linear_goal(0, {linear_step_waypoints_.at(0)}); // go to start
+      // send_linear_goal(0, {linear_step_waypoints_.at(0)}); // go to start
 
       send_linear_step_goal(linear_step_repeat_, linear_step_freq_, linear_step_waypoints_);
     }
