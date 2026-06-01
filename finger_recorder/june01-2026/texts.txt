@@ -1,0 +1,23 @@
+test0:
+    linear_step:
+      repeat: 1
+      freq: 3.5
+      waypoints: [
+        0.0, 0.0, 0.0,
+        0.0, 1.57, 1.31]
+
+test1:
+    linear_step:
+      repeat: 1
+      freq: 4.0
+      waypoints: [
+        0.0, 0.0, 0.0,
+        0.0, 1.57, 1.31]
+
+test2:
+    linear_step:
+      repeat: 1
+      freq: 3.5
+      waypoints: [
+        0.0, 0.0, 0.0,
+        0.0, 1.57, 1.31]

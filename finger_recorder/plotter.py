@@ -18,18 +18,18 @@ import rosbag2_py
 
 DRAKE_JOINT_TORQUES = False
 
-DATA_FOLDER = 'src/robotic-finger-sim/finger_recorder/may28-2026/test9/'
+DATA_FOLDER = 'src/robotic-finger/finger_recorder/bags/'
 
-FILE = 'finger_bag_20260528_175306_0.mcap'
+FILE = 'latest'
 
 JOINT_LABELS = ['splay [deg]', 'mcp_flex [deg]', 'pip/dip_flex [deg]']
 
-def save_data_to_csv(data, joint_labels, output_file='plotted_data.csv'):
+def save_data_to_csv(data, joint_labels, output_file='csv/plotted_data.csv'):
     """Save the loaded data to a CSV file."""
     # Flatten the data structure into a single dataframe-like format
     all_times = set()
     data_dict = {}
-    
+
     for group, series_dict in data.items():
         for series, values in series_dict.items():
             if not values:
@@ -41,24 +41,24 @@ def save_data_to_csv(data, joint_labels, output_file='plotted_data.csv'):
                     if key not in data_dict:
                         data_dict[key] = {}
                     data_dict[key][t] = np.rad2deg(positions[i])
-    
+
     if not all_times:
         print("No data to save")
         return
-    
+
     sorted_times = sorted(all_times)
-    
+
     with open(output_file, 'w', newline='') as csvfile:
         fieldnames = ['Time (s)'] + sorted(data_dict.keys())
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
-        
+
         for t in sorted_times:
             row = {'Time (s)': f"{t:.6f}"}
             for col in fieldnames[1:]:
                 row[col] = f"{data_dict[col].get(t, '')}"  # Empty string if time not in this series
             writer.writerow(row)
-    
+
     print(f"Data saved to {output_file}")
 
 if DRAKE_JOINT_TORQUES:
@@ -94,13 +94,14 @@ if DRAKE_JOINT_TORQUES:
             rosbag2_py.ConverterOptions('', ''))
 
     while reader.has_next():
-        topic, raw, t = reader.read_next()
+        topic, raw, _ = reader.read_next()
         if topic in TOPICS:
             group, series = TOPICS[topic]  # must unpack tuple
             msg = deserialize_message(raw, MotorFeedback)
             positions = list(msg.motor_positions)
+            stamp = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
             if len(positions) == len(JOINT_LABELS):
-                data[group][series].append((t / 1e9, positions))
+                data[group][series].append((stamp, positions))
 
     print("Data loaded:")
     for group, series_dict in data.items():
@@ -108,7 +109,7 @@ if DRAKE_JOINT_TORQUES:
             print(f"  {group}/{series}: {len(values)} points")
 
     # Save data to CSV
-    save_data_to_csv(data, JOINT_LABELS, DATA_FOLDER + 'plotted_data.csv')
+    # save_data_to_csv(data, JOINT_LABELS, DATA_FOLDER + 'plotted_data.csv')
 
     fig, axes = plt.subplots(len(JOINT_LABELS), len(data), figsize=(14, 8), sharex=True)
 
@@ -169,13 +170,14 @@ else:
             rosbag2_py.ConverterOptions('', ''))
 
     while reader.has_next():
-        topic, raw, t = reader.read_next()
+        topic, raw, _ = reader.read_next()
         if topic in TOPICS:
             group, series = TOPICS[topic]  # must unpack tuple
             msg = deserialize_message(raw, MotorFeedback)
             positions = list(msg.motor_positions)
+            stamp = msg.header.stamp.sec + msg.header.stamp.nanosec * 1e-9
             if len(positions) == len(JOINT_LABELS):
-                data[group][series].append((t / 1e9, positions))
+                data[group][series].append((stamp, positions))
 
     print("Data loaded:")
     for group, series_dict in data.items():
@@ -183,7 +185,7 @@ else:
             print(f"  {group}/{series}: {len(values)} points")
 
     # Save data to CSV
-    save_data_to_csv(data, JOINT_LABELS, DATA_FOLDER + 'plotted_data.csv')
+    # save_data_to_csv(data, JOINT_LABELS, DATA_FOLDER + 'plotted_data.csv')
 
     fig, axes = plt.subplots(len(JOINT_LABELS), len(data), figsize=(14, 8), sharex=True)
 
