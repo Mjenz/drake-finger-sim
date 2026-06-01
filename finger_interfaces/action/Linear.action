@@ -1,6 +1,9 @@
 # Action message type to generate and command linear joint space motion
-float32[] start     # Array of waypoint start position in joint space (splay, mcp, pip/dip)
-float32[] end       # Array of waypoint end positions in joint space (splay, mcp, pip/dip)
+int32 repeat    # Boolean to indicate trajectory should be repeated by controller (1 for repeat, 0 for not)
+int32 length    # The number of waypoints
+float32[] splay     # Array of waypoint splay positions in joint space
+float32[] mcp     # Array of waypoint mcp positions in joint space
+float32[] pipdip     # Array of waypoint pip/dip positions in joint space
 ---
 int32 success
 ---

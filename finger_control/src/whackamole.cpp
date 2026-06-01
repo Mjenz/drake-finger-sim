@@ -78,8 +78,6 @@ public:
     fingertip_tf_.transform.translation.y = 0.0;
     fingertip_tf_.transform.translation.z = 0.0;
 
-    send_linear_goal({0.0, 0.5, 0.5});
-
     // init frame names
     base_frame_ = "base_frame";
     goal_frame_ = "goal";

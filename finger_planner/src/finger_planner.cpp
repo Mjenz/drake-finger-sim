@@ -314,26 +314,38 @@ public:
       const rclcpp_action::GoalUUID,
       std::shared_ptr<const finger_interfaces::action::Linear::Goal> goal)
       {
-        RCLCPP_INFO(get_logger(), "Received linear goal request:");
+        // check that requested waypoints are same length
+        if ((goal->length == int(goal->splay.size())) && (goal->length == int(goal->mcp.size())) &&
+          (goal->length == int(goal->pipdip.size())))
+        {
+          // save waypoints as vector
+          auto waypoints_temp = std::vector<arma::vec>();
+          for (auto i = 0; i < goal->length; i++) {
+            waypoints_temp.push_back({goal->splay.at(i), goal->mcp.at(i), goal->pipdip.at(i)});
+          }
 
-        if ((int(goal->start.size()) == 3) && (int(goal->end.size()) == 3)) {
-          // check that start and end are within the joint limits
+          // print request
+          RCLCPP_INFO(get_logger(), "Received linear goal request with length %d and waypoints:",
+          goal->length);
+
+          // check that waypoints are within the joint limits
           try {
             RCLCPP_INFO_STREAM(get_logger(),
-          "start: (" << goal->start.at(0) << ", " << goal->start.at(1) << ", " <<
-              goal->start.at(2) << ")");
+            "waypoint 0: (" << goal->splay.at(0) << ", " << goal->mcp.at(0) << ", " << goal->pipdip.at(0) << ")");
+
+            auto start = transforms_->joint_to_end_effector(waypoints_temp[0]);
             RCLCPP_INFO_STREAM(get_logger(),
-          "end: (" << goal->end.at(0) << ", " << goal->end.at(1) << ", " << goal->end.at(2) << ")");
-
-            arma::vec start_vec = {goal->start.at(0), goal->start.at(1), goal->start.at(2)};
-            arma::vec end_vec = {goal->start.at(0), goal->start.at(1), goal->start.at(2)};
-
-            auto start = transforms_->joint_to_end_effector(start_vec);
-            auto end = transforms_->joint_to_end_effector(end_vec);
-
+            "waypoint 0 in joint space: (" << start(0) << ", " << start(1) << ", " << start(2) << ")");
+            for(auto i = 1; i < goal->length; i++) {
+              RCLCPP_INFO_STREAM(get_logger(),
+              "waypoint " << i << ": (" << goal->splay.at(i) << ", " << goal->mcp.at(i) << ", " << goal->pipdip.at(i) << ")");
+              auto point = transforms_->joint_to_end_effector(waypoints_temp[i]);
+              RCLCPP_INFO_STREAM(get_logger(),
+                "waypoint " << i << " in joint space: (" << point(0) << ", " << point(1) << ", " << point(2) << ")");
+            }
           } catch (std::runtime_error & e) {
             RCLCPP_ERROR_STREAM(get_logger(),
-          "Goal request REJECTED because start or end is outside of joint limits!!");
+            "Oh no, ik failed to converge");
             return rclcpp_action::GoalResponse::REJECT;
           }
 
@@ -856,22 +868,29 @@ private:
     execute_goal<finger_interfaces::action::Linear>(
       goal_handle, linear_result_,
       [this](const auto & goal) {
-        RCLCPP_INFO_STREAM(get_logger(),
-        "start: (" << goal.start.at(0) << ", " << goal.start.at(1) << ", " << goal.start.at(2) <<
-          ")");
-        RCLCPP_INFO_STREAM(get_logger(),
-        "end: (" << goal.end.at(0) << ", " << goal.end.at(1) << ", " << goal.end.at(2) << ")");
+        // check that requested waypoints are same length
+        if ((goal.length == int(goal.splay.size())) && (goal.length == int(goal.mcp.size())) &&
+        (goal.length == int(goal.pipdip.size())))
+        {
+          // save waypoints as vector
+          auto waypoints_temp = std::vector<arma::vec>();
+          for (auto i = 0; i < goal.length; i++) {
+            waypoints_temp.push_back({goal.splay.at(i), goal.mcp.at(i), goal.pipdip.at(i)});
+          }
 
-        arma::vec start_vec = {goal.start.at(0), goal.start.at(1), goal.start.at(2)};
-        arma::vec end_vec = {goal.end.at(0), goal.end.at(1), goal.end.at(2)};
+          RCLCPP_INFO(get_logger(), "Received linear goal request with length %d and waypoints:",
+          goal.length);
 
-        // check that start and end points are within workspace
-        auto start = transforms_->joint_to_end_effector(start_vec);
-        auto end = transforms_->joint_to_end_effector(end_vec);
+          return generator_->generate_linear(waypoints_temp, max_vel_, max_accel_);
 
-        return generator_->generate_linear(start_vec, end_vec, max_vel_, max_accel_);
+        } else {
+          RCLCPP_INFO(get_logger(), "Goal request REJECTED because waypoints are malformed.");
+
+          // reject request
+          throw std::runtime_error("Waypoints malformed.");
+        }
       },
-      0,
+      goal_handle->get_goal()->repeat,
       'P');
   }
 

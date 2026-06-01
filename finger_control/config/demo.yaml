@@ -27,8 +27,8 @@
 
     # Linear move demo parameters
     linear:
-      start_loc: [0.0, 0.0, .8]
-      end_loc: [0.0, 0.0, 1.3]
+      start_loc: [0.0, 0.0, 0.0]
+      end_loc: [0.0, 1.5, 1.3]
 
     # Force step demo parameters
     force:

@@ -54,12 +54,10 @@ public:
       std::vector<float> start_joint_loc(linear_start_loc_.begin(), linear_start_loc_.end());
       std::vector<float> end_joint_loc(linear_end_loc_.begin(), linear_end_loc_.end());
 
-      for (auto i = 0; i < 10; i++) {
-        send_linear_goal(end_joint_loc, start_joint_loc);
-        rclcpp::sleep_for(250ms);
-        send_linear_goal(start_joint_loc, end_joint_loc);
-        rclcpp::sleep_for(250ms);
-      }
+      // send_linear_goal(0, {start_joint_loc});
+      send_linear_goal(1, {start_joint_loc,
+                        end_joint_loc,
+                        start_joint_loc});
     }
 
     else if (demo_ == "sinusoidal") {

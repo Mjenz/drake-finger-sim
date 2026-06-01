@@ -41,14 +41,13 @@ public:
   std::vector<arma::vec> generate_step(int joint, double amp, double freq, double v_shift);
 
     /// \brief Generate a linear trajectory with trapezoidal time scaling
-    /// \param start - joint space starting point
-    /// \param end - joint space ending point
+    /// \param waypoints - list of joint waypoints
     /// \param v_max - max speed during operation
     /// \param a_max - max acceleration during operation
     /// \param ground_height - relative height of the ground plane (should be negative)
     /// \return A vector of motor positions corresponding to the generated linear trajectory
   std::vector<arma::vec> generate_linear(
-    arma::vec start, arma::vec end, double v_max,
+    std::vector<arma::vec> waypoints, double v_max,
     double a_max);
 
     /// \brief Generate a trajectory through joint space linear interpolation of cartesian waypoints

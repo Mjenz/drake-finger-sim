@@ -95,47 +95,54 @@ std::vector<arma::vec> JointTrajectory::generate_step(
 }
 
 std::vector<arma::vec> JointTrajectory::generate_linear(
-  arma::vec start, arma::vec end,
-  double v_max, double a_max)
-{
-  double s = arma::norm(end - start);
-  double Tf = s < (v_max * v_max) / a_max ? 2.0 * std::sqrt(s / a_max) : s / v_max + v_max / a_max;
-
-  int N = std::ceil(Tf * (double)_sampling_rate);
-
-  std::vector<arma::vec> q_motor_list;
-  q_motor_list.reserve(N);
-
-  for(double t = 0; t < Tf; t += 1.0 / _sampling_rate) {
-
-    double st = TrapezoidalTimeScaling(Tf, t, v_max, a_max, s);
-    auto q_joint = start * (1 - st) + end * st;
-
-    if(_transforms.joint_to_end_effector(q_joint)(2, 3) < _ground_height) {
-      std::cout << _transforms.joint_to_end_effector(q_joint) << std::endl;
-      throw std::runtime_error("Joint Trajectory goes into the ground");
-    }
-
-    q_motor_list.push_back(_transforms.joint_to_motor(q_joint));
-  }
-
-
-  return q_motor_list;
-}
-
-std::vector<arma::vec> JointTrajectory::generate_cartesian(
   std::vector<arma::vec> waypoints,
   double v_max, double a_max)
 {
   std::vector<arma::vec> trajectory;
 
   for(unsigned int i = 1; i < waypoints.size(); i++) {
-    auto start = _transforms.end_effector_to_joint(waypoints[i - 1]);
-    auto end = _transforms.end_effector_to_joint(waypoints[i]);
+    auto start = waypoints.at(i - 1);
+    auto end = waypoints.at(i);
 
-    auto linear_step = generate_linear(start, end, v_max, a_max);
-    trajectory.insert(trajectory.end(), linear_step.begin(), linear_step.end());
+    double s = arma::norm(end - start);
+    double Tf = s < (v_max * v_max) / a_max ? 2.0 * std::sqrt(s / a_max) : s / v_max + v_max / a_max;
+
+    int N = std::ceil(Tf * (double)_sampling_rate);
+
+    std::vector<arma::vec> q_motor_list;
+    q_motor_list.reserve(N);
+
+    for(double t = 0; t < Tf; t += 1.0 / _sampling_rate) {
+
+      double st = TrapezoidalTimeScaling(Tf, t, v_max, a_max, s);
+      auto q_joint = start * (1 - st) + end * st;
+
+      if(_transforms.joint_to_end_effector(q_joint)(2, 3) < _ground_height) {
+        std::cout << _transforms.joint_to_end_effector(q_joint) << std::endl;
+        throw std::runtime_error("Joint Trajectory goes into the ground");
+      }
+
+      q_motor_list.push_back(_transforms.joint_to_motor(q_joint));
+    }
+    
+    trajectory.insert(trajectory.end(), q_motor_list.begin(), q_motor_list.end());
   }
+
+  return trajectory;
+}
+
+std::vector<arma::vec> JointTrajectory::generate_cartesian(
+  std::vector<arma::vec> waypoints,
+  double v_max, double a_max)
+{
+
+  std::vector<arma::vec> temp_waypoints;
+
+  for(unsigned int i = 0; i < waypoints.size(); i++) {
+    temp_waypoints.push_back(_transforms.end_effector_to_joint(waypoints[i]));
+  }
+
+  std::vector<arma::vec> trajectory = generate_linear(temp_waypoints, v_max, a_max);
 
   return trajectory;
 }

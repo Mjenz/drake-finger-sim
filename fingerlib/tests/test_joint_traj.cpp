@@ -94,7 +94,7 @@ TEST_CASE("Basic usage of JointTrajectory class", "[JointTrajectory]")
         const double a_max = 1.0;
         const double dt = 1.0 / 100.0;
 
-        auto q_motor_list = generator.generate_linear(start, end, v_max, a_max);
+        auto q_motor_list = generator.generate_linear({start, end}, v_max, a_max);
 
         // Endpoints match in joint space
         REQUIRE_THAT(arma::norm(transforms.motor_to_joint(q_motor_list.front()) - start),
@@ -131,7 +131,7 @@ TEST_CASE("Basic usage of JointTrajectory class", "[JointTrajectory]")
 
         auto generator_bad = JointTrajectory{transforms, 100, -0.1};
 
-        REQUIRE_THROWS(generator_bad.generate_linear(start, end, v_max, a_max));
+        REQUIRE_THROWS(generator_bad.generate_linear({start, end}, v_max, a_max));
     }
 
     SECTION("Cartesian Waypoints")

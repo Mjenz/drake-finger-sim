@@ -254,6 +254,7 @@ protected:
     RCLCPP_INFO(get_logger(), "Sending goal");
 
     auto send_goal_options = rclcpp_action::Client<Cartesian>::SendGoalOptions();
+
     send_goal_options.goal_response_callback =
       [this](const GoalHandleCartesian::SharedPtr & goal_handle) {
         if (!goal_handle) {
@@ -340,22 +341,46 @@ protected:
     RCLCPP_INFO(get_logger(), "Goal completed");
   }
 
-  void send_linear_goal(std::vector<float> end, std::vector<float> start = {})
+  void send_linear_goal(bool repeat, std::vector<std::vector<float>> waypoints)
   {
     auto goal_msg = Linear::Goal();
 
-    if (!start.empty()) {
-      goal_msg.start = start;
-    } else {
+    goal_msg.length = int(waypoints.size());
+    goal_msg.repeat = int(repeat);
+
+    // check if they provided more than just the end
+    if (goal_msg.length > 1) {
+      for (auto & wp : waypoints) {
+        goal_msg.splay.push_back(wp.at(0));
+        goal_msg.mcp.push_back(wp.at(1));
+        goal_msg.pipdip.push_back(wp.at(2));
+      }
+    }
+    else {
+      // derive current position in cartesian coordinates
+
       arma::vec motor_pos = {
         motor_actual_feedback_.motor_positions.at(0),
         motor_actual_feedback_.motor_positions.at(1),
         motor_actual_feedback_.motor_positions.at(2)};
-      arma::vec joint_pos = transforms_->motor_to_joint(motor_pos);
-      goal_msg.start = {float(joint_pos(0)), float(joint_pos(1)), float(joint_pos(2))};
-    }
 
-    goal_msg.end = end;
+      arma::vec joint_pos = transforms_->motor_to_joint(motor_pos);
+      RCLCPP_INFO_STREAM(get_logger(), "motor_pos: " << motor_pos.at(0) << " " << motor_pos.at(1) << " " << motor_pos.at(2));
+      RCLCPP_INFO_STREAM(get_logger(), "starting joint_pos: " << joint_pos(0) << " " << joint_pos(1) << " " << joint_pos(2));
+      // add the current position in cartesian coordinates
+      goal_msg.splay.push_back(joint_pos(0));
+      goal_msg.mcp.push_back(joint_pos(1));
+      goal_msg.pipdip.push_back(joint_pos(2));
+
+      // then add the last point
+      for (auto & wp : waypoints) {
+        goal_msg.splay.push_back(wp.at(0));
+        goal_msg.mcp.push_back(wp.at(1));
+        goal_msg.pipdip.push_back(wp.at(2));
+      }
+
+      goal_msg.length = int(waypoints.size() + 1);
+    }    
 
     RCLCPP_INFO(get_logger(), "Sending goal");
 
@@ -506,7 +531,7 @@ protected:
   void send_chirp_velocity_goal(int joint, float amp, float freq_init, float freq_final, float time, std::vector<float> start_pos)
   {
     // send the start pos
-    send_linear_goal(start_pos);
+    send_linear_goal(0, {start_pos});
     
     auto goal_msg = ChirpVelocity::Goal();
     goal_msg.joint = joint;
