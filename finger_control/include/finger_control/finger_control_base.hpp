@@ -21,6 +21,7 @@
 #include "finger_interfaces/action/cartesian.hpp"
 #include "finger_interfaces/action/sinusoidal.hpp"
 #include "finger_interfaces/action/linear.hpp"
+#include "finger_interfaces/action/linear_step.hpp"
 #include "finger_interfaces/action/force.hpp"
 #include "finger_interfaces/action/chirp.hpp"
 #include "finger_interfaces/action/chirp_velocity.hpp"
@@ -36,12 +37,14 @@ public:
   using Cartesian = finger_interfaces::action::Cartesian;
   using Sinusoidal = finger_interfaces::action::Sinusoidal;
   using Linear = finger_interfaces::action::Linear;
+  using LinearStep = finger_interfaces::action::LinearStep;
   using Force = finger_interfaces::action::Force;
   using Chirp = finger_interfaces::action::Chirp;
   using ChirpVelocity = finger_interfaces::action::ChirpVelocity;
   using GoalHandleCartesian = rclcpp_action::ClientGoalHandle<Cartesian>;
   using GoalHandleSinusoidal = rclcpp_action::ClientGoalHandle<Sinusoidal>;
   using GoalHandleLinear = rclcpp_action::ClientGoalHandle<Linear>;
+  using GoalHandleLinearStep = rclcpp_action::ClientGoalHandle<LinearStep>;
   using GoalHandleForce = rclcpp_action::ClientGoalHandle<Force>;
   using GoalHandleChirp = rclcpp_action::ClientGoalHandle<Chirp>;
   using GoalHandleChirpVelocity = rclcpp_action::ClientGoalHandle<ChirpVelocity>;
@@ -65,6 +68,7 @@ public:
     cartesian_client_ = rclcpp_action::create_client<Cartesian>(this, "/cartesian_move");
     sinusoidal_client_ = rclcpp_action::create_client<Sinusoidal>(this, "/sinusoidal_move");
     linear_client_ = rclcpp_action::create_client<Linear>(this, "/linear_move");
+    linear_step_client_ = rclcpp_action::create_client<LinearStep>(this, "/linear_step_move");
     force_step_client_ = rclcpp_action::create_client<Force>(this, "/force_step_move");
     chirp_client_ = rclcpp_action::create_client<Chirp>(this, "/chirp_move");
     chirp_velocity_client_ = rclcpp_action::create_client<ChirpVelocity>(this, "/chirp_velocity_move");
@@ -86,6 +90,13 @@ public:
     while (!linear_client_->wait_for_action_server(1s)) {
       if (!rclcpp::ok()) {
         RCLCPP_ERROR(get_logger(), "client interrupted while waiting for linear_move action to appear.");
+        rclcpp::shutdown();
+      }
+      RCLCPP_INFO(get_logger(), "waiting for linear_move action to appear...");
+    }
+    while (!linear_step_client_->wait_for_action_server(1s)) {
+      if (!rclcpp::ok()) {
+        RCLCPP_ERROR(get_logger(), "client interrupted while waiting for linear_step_move action to appear.");
         rclcpp::shutdown();
       }
       RCLCPP_INFO(get_logger(), "waiting for linear_move action to appear...");
@@ -144,6 +155,7 @@ protected:
   rclcpp_action::Client<Cartesian>::SharedPtr cartesian_client_;
   rclcpp_action::Client<Sinusoidal>::SharedPtr sinusoidal_client_;
   rclcpp_action::Client<Linear>::SharedPtr linear_client_;
+  rclcpp_action::Client<LinearStep>::SharedPtr linear_step_client_;
   rclcpp_action::Client<Force>::SharedPtr force_step_client_;
   rclcpp_action::Client<Chirp>::SharedPtr chirp_client_;
   rclcpp_action::Client<ChirpVelocity>::SharedPtr chirp_velocity_client_;
@@ -423,6 +435,62 @@ protected:
     spin_until_complete(result_future);
     RCLCPP_INFO(get_logger(), "Goal completed");
   }
+
+  void send_linear_step_goal(bool repeat, double freq, std::vector<std::vector<float>> waypoints)
+  {
+    auto goal_msg = LinearStep::Goal();
+
+    goal_msg.length = int(waypoints.size());
+    goal_msg.repeat = int(repeat);
+    goal_msg.freq = freq;
+
+    for (auto & wp : waypoints) {
+      goal_msg.splay.push_back(wp.at(0));
+      goal_msg.mcp.push_back(wp.at(1));
+      goal_msg.pipdip.push_back(wp.at(2));
+    }
+  
+    RCLCPP_INFO(get_logger(), "Sending goal");
+
+    auto send_goal_options = rclcpp_action::Client<LinearStep>::SendGoalOptions();
+    
+    send_goal_options.goal_response_callback =
+      [this](const GoalHandleLinearStep::SharedPtr & goal_handle) {
+        if (!goal_handle) {
+          RCLCPP_ERROR(get_logger(), "Goal was rejected by server");
+        } else {
+          RCLCPP_INFO(get_logger(), "Goal accepted by server, waiting for result");
+        }
+      };
+    send_goal_options.feedback_callback = [this](
+      GoalHandleLinearStep::SharedPtr,
+      const std::shared_ptr<const LinearStep::Feedback>) {
+        RCLCPP_INFO(get_logger(), "feedback received...");
+      };
+    send_goal_options.result_callback = [this](const GoalHandleLinearStep::WrappedResult & result) {
+        switch (result.code) {
+          case rclcpp_action::ResultCode::SUCCEEDED: break;
+          case rclcpp_action::ResultCode::ABORTED:
+            RCLCPP_ERROR_STREAM(get_logger(), "Goal was aborted"); return;
+          case rclcpp_action::ResultCode::CANCELED:
+            RCLCPP_ERROR_STREAM(get_logger(), "Goal was canceled"); return;
+          default:
+            RCLCPP_ERROR_STREAM(get_logger(), "Unknown result code"); return;
+        }
+        RCLCPP_INFO_STREAM(get_logger(), "result code: " << result.result.get()->success);
+      };
+
+    auto goal_handle_future = linear_step_client_->async_send_goal(goal_msg, send_goal_options);
+    spin_until_complete(goal_handle_future);
+    auto goal_handle = goal_handle_future.get();
+    if (!goal_handle) {
+      RCLCPP_INFO(get_logger(), "Goal rejected"); return;
+    }
+    auto result_future = linear_step_client_->async_get_result(goal_handle);
+    spin_until_complete(result_future);
+    RCLCPP_INFO(get_logger(), "Goal completed");
+  }
+
 
   void send_force_step_goal(
     std::vector<float> joint_state,

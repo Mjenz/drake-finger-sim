@@ -18,6 +18,7 @@
     <choice value="force_step" />
     <choice value="sinusoidal" />
     <choice value="linear" />
+    <choice value="linear_step" />
     <choice value="ik" />
     <choice value="cartesian_ik" />
     <choice value="chirp"/>

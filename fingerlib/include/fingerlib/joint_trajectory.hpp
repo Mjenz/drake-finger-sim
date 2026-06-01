@@ -33,12 +33,10 @@ public:
   std::vector<arma::vec> generate_chirp(int joint, double amp, double freq_1, double freq_2, double time, double v_shift);
 
     /// \brief Generate a step trajectory for a specified joint + parameters
-    /// \param joint - The index of the joint to generate the step for (0, 1, or 2)
-    /// \param amp - The amplitude of the step (in radians)
-    /// \param freq - The frequency of the step (in Hz)
-    /// \param v_shift - The vertical shift of the step (in radians)
+    /// \param waypoints - list of joint waypoints
+    /// \param freq - The frequency of the step (in Hz) to change waypoint
     /// \return A vector of motor positions corresponding to the generated step trajectory
-  std::vector<arma::vec> generate_step(int joint, double amp, double freq, double v_shift);
+  std::vector<arma::vec> generate_step(std::vector<arma::vec> waypoints, double freq);
 
     /// \brief Generate a linear trajectory with trapezoidal time scaling
     /// \param waypoints - list of joint waypoints

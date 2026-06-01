@@ -13,6 +13,7 @@ set(action_files
   "action/Cartesian.action"
   "action/Sinusoidal.action"
   "action/Linear.action"
+  "action/LinearStep.action"
   "action/Force.action"
   "action/Chirp.action"
   "action/ChirpVelocity.action"

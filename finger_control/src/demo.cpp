@@ -60,6 +60,12 @@ public:
                         start_joint_loc});
     }
 
+    else if (demo_ == "linear_step") {
+      RCLCPP_INFO(get_logger(), "Running linear step joint movement demo...");
+
+      send_linear_step_goal(linear_step_repeat_, linear_step_freq_, linear_step_waypoints_);
+    }
+
     else if (demo_ == "sinusoidal") {
       RCLCPP_INFO(get_logger(), "Running sinusoidal movement demo...");
 
@@ -177,6 +183,9 @@ private:
   std::vector<double> chirp_velocity_start_pos_;
   std::vector<double> linear_start_loc_;
   std::vector<double> linear_end_loc_;
+  std::vector<std::vector<float>> linear_step_waypoints_;
+  int linear_step_repeat_;
+  double linear_step_freq_;
   double force_freq_;
   int force_repeat_;
   std::vector<double> force_q_state_;
@@ -250,6 +259,15 @@ private:
     param_desc.description = "The end position in joint space for linear move demo <splay, mcp, pipdip> in radians.";
     declare_parameter("linear.end_loc", std::vector<double>{0.0, 0.0, 0.0}, param_desc);
 
+    param_desc.description = "The list of 3 vector positions in joint space for linear step move demo in radians.";
+    declare_parameter("linear_step.waypoints", std::vector<double>{0.0, 0.0, 0.0}, param_desc);
+
+    param_desc.description = "The frequency to alterate linear step at for the linear step demo.";
+    declare_parameter("linear_step.freq", 0.0, param_desc);
+
+    param_desc.description = "Boolean (1 or 0) to indicate if linear step demo should be repeated.";
+    declare_parameter("linear_step.repeat", 0, param_desc);
+
     param_desc.description = "The frequency to alterate force at for the force demo.";
     declare_parameter("force.freq", 0.0, param_desc);
 
@@ -294,6 +312,8 @@ private:
     chirp_velocity_start_pos_ = get_parameter("chirp_velocity.start_pos").as_double_array();
     linear_start_loc_ = get_parameter("linear.start_loc").as_double_array();
     linear_end_loc_ = get_parameter("linear.end_loc").as_double_array();
+    linear_step_freq_ = get_parameter("linear_step.freq").as_double();
+    linear_step_repeat_ = get_parameter("linear_step.repeat").as_int();
     force_q_state_ = get_parameter("force.q_state").as_double_array();
     force_repeat_ = get_parameter("force.repeat").as_int();
     force_freq_ = get_parameter("force.freq").as_double();
@@ -302,6 +322,14 @@ private:
     ik_repeat_ = get_parameter("ik.repeat").as_int();
     ik_start_ = get_parameter("ik.start").as_double_array();
     ik_end_ = get_parameter("ik.end").as_double_array();
+
+    // get linear step waypoints
+    std::vector<double> flat_linear_step_waypoints = get_parameter("linear_step.waypoints").as_double_array();
+    for (auto i = 0; i < int(flat_linear_step_waypoints.size()); i+=3) {
+      linear_step_waypoints_.push_back({float(flat_linear_step_waypoints.at(i)),
+                                        float(flat_linear_step_waypoints.at(i+1)),
+                                        float(flat_linear_step_waypoints.at(i+2))});
+    }
   }
 
 };

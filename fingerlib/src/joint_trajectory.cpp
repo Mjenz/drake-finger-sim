@@ -70,25 +70,20 @@ std::vector<arma::vec> JointTrajectory::generate_chirp(
 
 
 std::vector<arma::vec> JointTrajectory::generate_step(
-  int joint, double amp, double freq,
-  double v_shift)
+  std::vector<arma::vec> waypoints,
+  double freq)
 {
   int N = std::ceil((double)_sampling_rate / freq);
 
+  int total_waypoints = waypoints.size();
+
   std::vector<arma::vec> q_motor_list;
+  
   q_motor_list.reserve(N);
 
-  for(double t = 0; t < 1.0 / freq; t += 1.0 / _sampling_rate) {
-
-    double step_value = (std::sin(2 * M_PI * freq * t) >= 0) ? amp + v_shift : v_shift;
-
-    arma::vec q_joint(3, arma::fill::zeros);
-
-    if(joint >= 0 && joint <= 2) {
-      q_joint(joint) = step_value;
-    }
-
-    q_motor_list.push_back(_transforms.joint_to_motor(q_joint));
+  for (int i = 0; i < N; i++) {
+    int waypoint_idx = (i * total_waypoints) / N;
+    q_motor_list.push_back(_transforms.joint_to_motor(waypoints.at(waypoint_idx)));
   }
 
   return q_motor_list;

@@ -37,6 +37,7 @@
 #include "finger_interfaces/action/cartesian.hpp"
 #include "finger_interfaces/action/sinusoidal.hpp"
 #include "finger_interfaces/action/linear.hpp"
+#include "finger_interfaces/action/linear_step.hpp"
 #include "finger_interfaces/action/force.hpp"
 #include "finger_interfaces/action/chirp.hpp"
 #include "finger_interfaces/action/chirp_velocity.hpp"
@@ -64,6 +65,7 @@ public:
   using GoalHandleCartesian = rclcpp_action::ServerGoalHandle<finger_interfaces::action::Cartesian>;
   using GoalHandleSinusoidal = rclcpp_action::ServerGoalHandle<finger_interfaces::action::Sinusoidal>;
   using GoalHandleLinear = rclcpp_action::ServerGoalHandle<finger_interfaces::action::Linear>;
+  using GoalHandleLinearStep = rclcpp_action::ServerGoalHandle<finger_interfaces::action::LinearStep>;
   using GoalHandleForce = rclcpp_action::ServerGoalHandle<finger_interfaces::action::Force>;
   using GoalHandleChirp = rclcpp_action::ServerGoalHandle<finger_interfaces::action::Chirp>;
   using GoalHandleChirpVelocity = rclcpp_action::ServerGoalHandle<finger_interfaces::action::ChirpVelocity>;
@@ -392,6 +394,90 @@ public:
     rcl_action_server_get_default_options(),
     action_cb_group_);
 
+    // create linear step move action
+    auto linear_step_handle_goal = [this](
+      const rclcpp_action::GoalUUID,
+      std::shared_ptr<const finger_interfaces::action::LinearStep::Goal> goal)
+      {
+        // check that requested waypoints are same length
+        if ((goal->length == int(goal->splay.size())) && (goal->length == int(goal->mcp.size())) &&
+          (goal->length == int(goal->pipdip.size())))
+        {
+          // save waypoints as vector
+          auto waypoints_temp = std::vector<arma::vec>();
+          for (auto i = 0; i < goal->length; i++) {
+            waypoints_temp.push_back({goal->splay.at(i), goal->mcp.at(i), goal->pipdip.at(i)});
+          }
+
+          // print request
+          RCLCPP_INFO(get_logger(), "Received linear goal request with length %d and waypoints:",
+          goal->length);
+
+          // check that waypoints are within the joint limits
+          try {
+            RCLCPP_INFO_STREAM(get_logger(),
+            "waypoint 0: (" << goal->splay.at(0) << ", " << goal->mcp.at(0) << ", " << goal->pipdip.at(0) << ")");
+
+            auto start = transforms_->joint_to_end_effector(waypoints_temp[0]);
+            RCLCPP_INFO_STREAM(get_logger(),
+            "waypoint 0 in joint space: (" << start(0) << ", " << start(1) << ", " << start(2) << ")");
+            for(auto i = 1; i < goal->length; i++) {
+              RCLCPP_INFO_STREAM(get_logger(),
+              "waypoint " << i << ": (" << goal->splay.at(i) << ", " << goal->mcp.at(i) << ", " << goal->pipdip.at(i) << ")");
+              auto point = transforms_->joint_to_end_effector(waypoints_temp[i]);
+              RCLCPP_INFO_STREAM(get_logger(),
+                "waypoint " << i << " in joint space: (" << point(0) << ", " << point(1) << ", " << point(2) << ")");
+            }
+          } catch (std::runtime_error & e) {
+            RCLCPP_ERROR_STREAM(get_logger(),
+            "Oh no, ik failed to converge");
+            return rclcpp_action::GoalResponse::REJECT;
+          }
+
+          // accept request
+          return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
+        } else {
+          // print error
+          RCLCPP_INFO(get_logger(), "Goal request REJECTED because waypoints are malformed.");
+
+          // reject request
+          return rclcpp_action::GoalResponse::REJECT;
+        }
+      };
+
+    auto linear_step_handle_cancel = [this](
+      const std::shared_ptr<GoalHandleLinearStep>)
+      {
+        RCLCPP_INFO(this->get_logger(), "Received request to cancel linear step goal.");
+        return rclcpp_action::CancelResponse::ACCEPT;
+      };
+
+    auto linear_step_handle_accepted = [this](
+      const std::shared_ptr<GoalHandleLinearStep> goal_handle)
+      {
+        // set cmd state
+        cmd_state_ = CmdState::BEGIN;
+
+        // init message attempts to 0 to be safe
+        msg_attempts_ = 0;
+
+        // start timer for action
+        action_timer_ = create_wall_timer(100ms, [this, goal_handle](){
+              return this->execute_linear_step_goal(goal_handle);
+          },
+      timer_cb_group_);
+      };
+
+    linear_step_action_server_ = rclcpp_action::create_server<finger_interfaces::action::LinearStep>(
+    this,
+    "/linear_step_move",
+    linear_step_handle_goal,
+    linear_step_handle_cancel,
+    linear_step_handle_accepted,
+    rcl_action_server_get_default_options(),
+    action_cb_group_);
+
+
     // create force step action
     auto force_step_handle_goal = [this](
       const rclcpp_action::GoalUUID,
@@ -589,6 +675,7 @@ private:
   rclcpp_action::Server<finger_interfaces::action::Cartesian>::SharedPtr cartesian_action_server_;
   rclcpp_action::Server<finger_interfaces::action::Sinusoidal>::SharedPtr sinusoidal_action_server_;
   rclcpp_action::Server<finger_interfaces::action::Linear>::SharedPtr linear_action_server_;
+  rclcpp_action::Server<finger_interfaces::action::LinearStep>::SharedPtr linear_step_action_server_;
   rclcpp_action::Server<finger_interfaces::action::Force>::SharedPtr force_step_action_server_;
   rclcpp_action::Server<finger_interfaces::action::Chirp>::SharedPtr chirp_action_server_;
   rclcpp_action::Server<finger_interfaces::action::ChirpVelocity>::SharedPtr chirp_velocity_action_server_;
@@ -598,6 +685,7 @@ private:
   std::shared_ptr<finger_interfaces::action::Cartesian::Result> cartesian_result_;
   std::shared_ptr<finger_interfaces::action::Sinusoidal::Result> sinusoidal_result_;
   std::shared_ptr<finger_interfaces::action::Linear::Result> linear_result_;
+  std::shared_ptr<finger_interfaces::action::LinearStep::Result> linear_step_result_;
   std::shared_ptr<finger_interfaces::action::Force::Result> force_step_result_;
   std::shared_ptr<finger_interfaces::action::Chirp::Result> chirp_result_;
   std::shared_ptr<finger_interfaces::action::ChirpVelocity::Result> chirp_velocity_result_;
@@ -882,6 +970,37 @@ private:
           goal.length);
 
           return generator_->generate_linear(waypoints_temp, max_vel_, max_accel_);
+
+        } else {
+          RCLCPP_INFO(get_logger(), "Goal request REJECTED because waypoints are malformed.");
+
+          // reject request
+          throw std::runtime_error("Waypoints malformed.");
+        }
+      },
+      goal_handle->get_goal()->repeat,
+      'P');
+  }
+
+  void execute_linear_step_goal(const std::shared_ptr<GoalHandleLinearStep> goal_handle)
+  {
+    execute_goal<finger_interfaces::action::LinearStep>(
+      goal_handle, linear_step_result_,
+      [this](const auto & goal) {
+        // check that requested waypoints are same length
+        if ((goal.length == int(goal.splay.size())) && (goal.length == int(goal.mcp.size())) &&
+        (goal.length == int(goal.pipdip.size())))
+        {
+          // save waypoints as vector
+          auto waypoints_temp = std::vector<arma::vec>();
+          for (auto i = 0; i < goal.length; i++) {
+            waypoints_temp.push_back({goal.splay.at(i), goal.mcp.at(i), goal.pipdip.at(i)});
+          }
+
+          RCLCPP_INFO(get_logger(), "Received linear step goal request with length %d and waypoints:",
+          goal.length);
+
+          return generator_->generate_step(waypoints_temp, goal.freq);
 
         } else {
           RCLCPP_INFO(get_logger(), "Goal request REJECTED because waypoints are malformed.");
