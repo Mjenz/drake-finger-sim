@@ -1,7 +1,7 @@
 /// \file
 /// \brief Coordinates motion planning for finger movement. Accepts action goals
-///        for cartesian, linear, and sinusoidal trajectories, generates motor
-///        position commands, and manages execution state via send/start/stop services.
+///        for cartesian, linear, linear step, and sinusoidal trajectories, generates
+///        motor position commands, and manages execution state via send/start/stop services.
 ///
 /// PARAMETERS:
 ///   + max_velocity (double) - Maximum joint velocity for trajectory generation
@@ -22,6 +22,7 @@
 ///   + /cartesian_move (finger_interfaces/action/Cartesian) - Move the end effector through a list of Cartesian waypoints
 ///   + /sinusoidal_move (finger_interfaces/action/Sinusoidal) - Drive a single joint with a sinusoidal trajectory
 ///   + /linear_move (finger_interfaces/action/Linear) - Move the end effector linearly between two joint-space points
+///   + /linear_step_move (finger_interfaces/action/LinearStep) - Step through a sequence of joint-space waypoints at a fixed frequency
 
 #include <chrono>
 #include <memory>
@@ -947,7 +948,7 @@ private:
           throw std::runtime_error("Waypoints malformed.");
         }
       },
-      0,
+      goal_handle->get_goal()->repeat,
       'P');
   }
 

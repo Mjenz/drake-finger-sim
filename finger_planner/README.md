@@ -13,5 +13,5 @@ This package contains asynchronous services to plan movements and create traject
 ## Nodes
 | Executable | Description |
 |---|---|
-| `finger_planner` | Action server for cartesian, linear, sinusoidal, force step, chirp, and chirp velocity movements; generates motor position commands; manages execution via `/send_command`, `/start_command`, `/stop_command`. |
+| `finger_planner` | Action server for cartesian, linear, linear step, sinusoidal, force step, chirp, and chirp velocity movements; generates motor position commands; manages execution via `/send_command`, `/start_command`, `/stop_command`. |
 

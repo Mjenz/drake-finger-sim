@@ -2,8 +2,8 @@
 /// \brief Base class for all finger control nodes. Handles Drake heartbeat
 ///        synchronization, finger kinematic parameter loading, motor feedback
 ///        subscription, and provides blocking send_*_goal helpers for all
-///        trajectory action types (cartesian, linear, sinusoidal, force step,
-///        chirp, chirp velocity). Subclass and call helpers from the constructor.
+///        trajectory action types (cartesian, linear, linear step, sinusoidal,
+///        force step, chirp, chirp velocity). Subclass and call helpers from the constructor.
 #ifndef FINGER_CONTROL__FINGER_CONTROL_BASE_HPP_
 #define FINGER_CONTROL__FINGER_CONTROL_BASE_HPP_
 
@@ -220,12 +220,13 @@ protected:
     four_bar_lengths_ = std::vector<double>(fbl_flat.begin(), fbl_flat.end());
   }
 
-  void send_cartesian_goal(std::vector<std::vector<float>> waypoints)
+  void send_cartesian_goal(bool repeat, std::vector<std::vector<float>> waypoints)
   {
     auto goal_msg = Cartesian::Goal();
     
     goal_msg.length = int(waypoints.size());
-
+    goal_msg.repeat = int(repeat);
+    
     // check if they provided more than just the end
     if (goal_msg.length > 1) {
       for (auto & wp : waypoints) {
