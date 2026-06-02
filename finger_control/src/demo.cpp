@@ -153,7 +153,7 @@ public:
     else if (demo_ == "lissajous") {
       RCLCPP_INFO(get_logger(), "Running lissajous demo...");
       auto lissajous = 
-        [this](float y_offset = 0.07, float z_offset = -0.07, float f = 0.5, int hz = 800) {
+        [this](float y_offset = 0.07, float z_offset = -0.07, float f = 0.5, int hz = 100) {
 
             auto n = int(hz / f);
             RCLCPP_INFO_STREAM(get_logger(), n);
@@ -168,10 +168,8 @@ public:
             }
             return points;
         };
-      for (auto i = 0; i < 20; i++) {
-        send_cartesian_goal(true, lissajous());
-        rclcpp::sleep_for(500ms);
-      }
+
+      send_cartesian_goal(true, lissajous());
     }
   }
 

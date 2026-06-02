@@ -21,3 +21,53 @@ test2:
       waypoints: [
         0.0, 0.0, 0.0,
         0.0, 1.57, 1.31]
+
+test3:
+    chirp_velocity:
+      joint: 1
+      vel_amp: 3.0
+      freq_init: 1.0
+      freq_final: 30.0
+      time: 8.0
+      start_pos: [0.0, 0.5, 0.0]  # pi/4 rad
+
+test4:
+    # Chirp demo parameters
+    chirp:
+      joint: 1
+      amp: 0.1
+      freq_init: 30.00
+      freq_final: 60.0
+      time: 8.0
+      v_offset: 0.5   # pi/4 rad
+
+test5:
+    linear_step:
+      repeat: 1
+      freq: 1.0
+      waypoints: [
+        0.0, 0.0, .8,
+        0.0, 0.0, 1.3]
+
+    spring test
+
+test6:
+      auto lissajous = 
+        [this](float y_offset = 0.07, float z_offset = -0.07, float f = 0.5, int hz = 100) {
+
+            auto n = int(hz / f);
+            RCLCPP_INFO_STREAM(get_logger(), n);
+            std::vector<std::vector<float>> points;
+            for (int i = 0; i <= n; ++i) {
+                float t = static_cast<float>(i) /  n;
+                points.push_back({
+                    0.0f, // motion is in the x plane
+                    1.5f * std::sinf(2 * M_PI * t) / 100.0f + y_offset,
+                    1.5f * std::sinf(2 * M_PI* 2 * t + 3 * M_PI / 4) / 100.0f + z_offset - 0.0161f
+                });
+            }
+            return points;
+        };
+
+
+    

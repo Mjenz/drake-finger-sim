@@ -213,6 +213,12 @@ protected:
     auto jmax_flat = get_parameter("joint_max").as_double_array();
     joint_max_ = arma::vec(jmax_flat);
 
+    // add a small buffer so that planning doesn't fail when the finger is at a joint limit
+    for (int i = 0; i < int(joint_max_.size()); i++) {
+      joint_min_(i) -= 0.01;
+      joint_max_(i) += 0.01;
+    }
+
     auto M_flat = get_parameter("M").as_double_array();
     M_ = arma::mat44(arma::mat(M_flat.data(), 4, 4).t());
 
@@ -498,14 +504,15 @@ protected:
     std::vector<float> force_low,
     std::vector<float> force_high,
     double frequency,
-    int repeat)
+    bool repeat)
   {
+
     auto goal_msg = Force::Goal();
     goal_msg.q_joint = joint_state;
     goal_msg.force_low = force_low;
     goal_msg.force_high = force_high;
     goal_msg.frequency = frequency;
-    goal_msg.repeat = repeat;
+    goal_msg.repeat = int(repeat);
 
     RCLCPP_INFO(get_logger(), "Sending goal");
 
@@ -600,6 +607,7 @@ protected:
   void send_chirp_velocity_goal(int joint, float amp, float freq_init, float freq_final, float time, std::vector<float> start_pos)
   {
     // send the start pos
+    std::vector<float> zero_pos = {0, 0, 0};
     send_linear_goal(0, {start_pos});
     
     auto goal_msg = ChirpVelocity::Goal();

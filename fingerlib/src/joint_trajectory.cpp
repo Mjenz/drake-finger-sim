@@ -152,7 +152,7 @@ std::vector<arma::vec> JointTrajectory::generate_force_step(
   int N = std::ceil((double)_sampling_rate / freq);
   auto J = _transforms.get_jacobian_body(q_joint);
 
-  std::cout << "Jacobian at q_joint: " << std::endl << J << std::endl;
+  // std::cout << "Jacobian at q_joint: " << std::endl << J << std::endl;
 
   std::vector<arma::vec> t_motor_list;
   t_motor_list.reserve(N);
@@ -169,7 +169,8 @@ std::vector<arma::vec> JointTrajectory::generate_force_step(
     auto t_joint = J_t * wrench;  // Convert force to joint torques
 
     auto t_motor = _transforms.joint_to_motor_torque(t_joint);
-    t_motor(0) /= -3.5;
+    t_motor(0) /= 3.5;
+    // t_motor(0) *= 0.0;
 
     t_motor_list.push_back(t_motor);
 
